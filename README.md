@@ -32,3 +32,8 @@ Configs are symlinked into `~/.config` by [GNU Stow](https://www.gnu.org/softwar
 | Keys | Action |
 |------|--------|
 | `Win+T` | Open terminal |
+| `Win+Q` | Close window |
+| `Win+Space` | Toggle floating |
+| `Win+F` | Toggle fullscreen |
+| `Win` + left-drag | Move window |
+| `Win` + right-drag | Resize window |

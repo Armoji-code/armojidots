@@ -2,8 +2,14 @@
 # Win key as modifier
 set $mod Mod4
 
-# The one and only keybind: Win+T opens a terminal
+# Keybinds
 bindsym $mod+t exec foot
+bindsym $mod+q kill
+bindsym $mod+space floating toggle
+bindsym $mod+f fullscreen toggle
+
+# Hold Win + left-drag to move windows, Win + right-drag to resize
+floating_modifier $mod normal
 
 # Thin visible border so windows can be seen on the empty background
 default_border pixel 2
