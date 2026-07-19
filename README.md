@@ -40,6 +40,7 @@ Configs are symlinked into `~/.config` by [GNU Stow](https://www.gnu.org/softwar
 | `Win` + right-drag | Resize window |
 | `Win+1…0` | Switch workspace (per-monitor, via [swaysome](https://gitlab.com/hyask/swaysome)) |
 | `Win+Shift+1…0` | Move window to workspace and follow |
+| `Win+Alt+1…0` | Move the whole workspace (all windows) to slot N and follow |
 
 ## Config structure
 
@@ -50,5 +51,6 @@ sway/.config/sway/
 ├── config           # entry point: variables + includes
 ├── keybinds.conf    # apps + window controls
 ├── workspaces.conf  # swaysome per-monitor workspaces
-└── appearance.conf  # borders (SwayFX effects coming)
+├── appearance.conf  # borders (SwayFX effects coming)
+└── scripts/         # helpers for what plain keybinds can't do
 ```
