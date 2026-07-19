@@ -9,6 +9,7 @@ My SwayFX dotfiles — built from scratch, one step at a time.
 | Package | What it configures |
 |---------|--------------------|
 | `sway/` | SwayFX window manager |
+| `waybar/` | Top status bar |
 
 ## Setup
 
@@ -19,11 +20,11 @@ My SwayFX dotfiles — built from scratch, one step at a time.
 ## Install
 
 ```sh
-sudo pacman -S swayfx foot stow
+sudo pacman -S swayfx foot stow waybar brightnessctl pavucontrol
 yay -S swaysome   # per-monitor workspaces (AUR)
 git clone https://github.com/Armoji-code/armojidots.git ~/dotfiles
 cd ~/dotfiles
-stow sway
+stow sway waybar
 ```
 
 Configs are symlinked into `~/.config` by [GNU Stow](https://www.gnu.org/software/stow/) — editing the live config edits the repo.
@@ -52,5 +53,10 @@ sway/.config/sway/
 ├── keybinds.conf    # apps + window controls
 ├── workspaces.conf  # swaysome per-monitor workspaces
 ├── appearance.conf  # borders (SwayFX effects coming)
+├── autostart.conf   # session launches (waybar)
 └── scripts/         # helpers for what plain keybinds can't do
+
+waybar/.config/waybar/
+├── config.jsonc     # modules: workspaces | clock | tray/bt/net/audio/brightness/battery
+└── style.css        # neutral dark (theme pass coming)
 ```

@@ -11,3 +11,4 @@ set $term foot
 include ~/.config/sway/keybinds.conf
 include ~/.config/sway/workspaces.conf
 include ~/.config/sway/appearance.conf
+include ~/.config/sway/autostart.conf

@@ -1,0 +1,59 @@
+/* ── armojidots · Waybar ─────────────────────────────
+   Neutral dark for now — real theme comes later. */
+
+* {
+  font-family: "JetBrainsMono Nerd Font", monospace;
+  font-size: 13px;
+  min-height: 0;
+}
+
+window#waybar {
+  background: rgba(18, 20, 26, 0.88);
+  color: #dcdfe4;
+}
+
+/* ── Workspaces ── */
+#workspaces button {
+  padding: 0 8px;
+  margin: 3px 2px;
+  border-radius: 8px;
+  color: #8a8f98;
+  background: transparent;
+}
+
+#workspaces button.focused {
+  color: #dcdfe4;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+#workspaces button.urgent {
+  color: #e06c75;
+}
+
+#workspaces button:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ── Modules ── */
+#clock,
+#tray,
+#bluetooth,
+#network,
+#pulseaudio,
+#backlight,
+#battery {
+  padding: 0 10px;
+  margin: 3px 0;
+}
+
+#battery.warning {
+  color: #e5c07b;
+}
+
+#battery.critical {
+  color: #e06c75;
+}
+
+#battery.charging {
+  color: #98c379;
+}

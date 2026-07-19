@@ -1,0 +1,71 @@
+// ── armojidots · Waybar ─────────────────────────────
+// Top bar: workspaces | clock | tray + system status
+{
+  "layer": "top",
+  "position": "top",
+  "height": 34,
+  "spacing": 6,
+
+  "modules-left": ["sway/workspaces"],
+  "modules-center": ["clock"],
+  "modules-right": ["tray", "bluetooth", "network", "pulseaudio", "backlight", "battery"],
+
+  // swaysome names workspaces 11..110 (monitor 1), 21..210 (monitor 2);
+  // format-icons displays them as 1..10 per monitor
+  "sway/workspaces": {
+    "format": "{icon}",
+    "format-icons": {
+      "11": "1", "12": "2", "13": "3", "14": "4", "15": "5",
+      "16": "6", "17": "7", "18": "8", "19": "9", "110": "10",
+      "21": "1", "22": "2", "23": "3", "24": "4", "25": "5",
+      "26": "6", "27": "7", "28": "8", "29": "9", "210": "10"
+    }
+  },
+
+  "clock": {
+    "format": "{:%H:%M}",
+    "format-alt": "{:%A, %B %d}",
+    "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>"
+  },
+
+  "tray": {
+    "spacing": 8
+  },
+
+  "bluetooth": {
+    "format": "󰂯",
+    "format-disabled": "󰂲",
+    "format-connected": "󰂱 {num_connections}",
+    "tooltip-format": "{controller_alias}\t{controller_address}",
+    "tooltip-format-connected": "{device_enumerate}"
+  },
+
+  "network": {
+    "format-wifi": "󰤨 {essid}",
+    "format-ethernet": "󰈀",
+    "format-disconnected": "󰤭 offline",
+    "tooltip-format-wifi": "{essid} ({signalStrength}%)\n{ipaddr}",
+    "tooltip-format-ethernet": "{ifname}\n{ipaddr}"
+  },
+
+  "pulseaudio": {
+    "format": "{icon} {volume}%",
+    "format-muted": "󰝟 mute",
+    "format-icons": { "default": ["󰕿", "󰖀", "󰕾"] },
+    "on-click": "pavucontrol",
+    "tooltip": false
+  },
+
+  "backlight": {
+    "format": "󰃞 {percent}%",
+    "on-scroll-up": "brightnessctl set 5%+",
+    "on-scroll-down": "brightnessctl set 5%-"
+  },
+
+  "battery": {
+    "states": { "warning": 25, "critical": 10 },
+    "format": "{icon} {capacity}%",
+    "format-charging": "󰂄 {capacity}%",
+    "format-icons": ["󰁺", "󰁼", "󰁾", "󰂀", "󰁹"]
+  }
+}
