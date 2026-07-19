@@ -10,6 +10,7 @@ My SwayFX dotfiles — built from scratch, one step at a time.
 |---------|--------------------|
 | `sway/` | SwayFX window manager |
 | `waybar/` | Top status bar |
+| `walker/` | Spotlight-style launcher (walker + elephant) |
 
 ## Setup
 
@@ -20,11 +21,13 @@ My SwayFX dotfiles — built from scratch, one step at a time.
 ## Install
 
 ```sh
-sudo pacman -S swayfx foot stow waybar brightnessctl pavucontrol swaybg nemo
-yay -S swaysome   # per-monitor workspaces (AUR)
+sudo pacman -S swayfx foot stow waybar brightnessctl pavucontrol swaybg nemo swaync jq
+yay -S swaysome walker-bin elephant-desktopapplications elephant-calc \
+       elephant-runner elephant-websearch elephant-menus bluetuith-bin
 git clone https://github.com/Armoji-code/armojidots.git ~/dotfiles
 cd ~/dotfiles
-stow sway waybar
+stow sway waybar walker
+elephant service enable
 ```
 
 Configs are symlinked into `~/.config` by [GNU Stow](https://www.gnu.org/software/stow/) — editing the live config edits the repo.
@@ -33,6 +36,7 @@ Configs are symlinked into `~/.config` by [GNU Stow](https://www.gnu.org/softwar
 
 | Keys | Action |
 |------|--------|
+| tap `Win` | Toggle Spotlight launcher |
 | `Win+T` | Open terminal |
 | `Win+E` | Open file manager (Nemo) |
 | `Win+Q` | Close window |
@@ -44,6 +48,13 @@ Configs are symlinked into `~/.config` by [GNU Stow](https://www.gnu.org/softwar
 | `Win+Shift+1…0` | Move window to workspace and follow |
 | `Win+Alt+1…0` | Move the whole workspace (all windows) to slot N and follow |
 
+## Spotlight
+
+Tap `Win`: apps sorted by your usage, plus hidden commands —
+`/set wifi · blue · wallpaper`, `/power`, `/web <query>`, `/bash <cmd>`,
+and inline math (`23*7`, Enter copies the result). Clicking the bar's
+wifi/bluetooth pills opens nmtui/bluetuith in floating glass terminals.
+
 ## Config structure
 
 Modular, one file per concern — new features get their own module:
@@ -51,14 +62,20 @@ Modular, one file per concern — new features get their own module:
 ```
 sway/.config/sway/
 ├── config           # entry point: variables + includes
-├── keybinds.conf    # apps + window controls
+├── input.conf       # touchpad/mouse (Windows-style scrolling)
+├── keybinds.conf    # apps + window controls + Spotlight
 ├── workspaces.conf  # swaysome per-monitor workspaces
 ├── appearance.conf  # borders + gaps (12px edges, matching the bar)
-├── effects.conf     # SwayFX: rounded corners, shadows, dim, blur
-├── autostart.conf   # session launches (waybar, swaybg wallpaper)
-└── scripts/         # helpers for what plain keybinds can't do
+├── effects.conf     # SwayFX: rounded corners, shadows, dim, blur, layer glass
+├── rules.conf       # window rules (floating glass TUI terminals)
+├── autostart.conf   # waybar, swaync, walker service, swaybg wallpaper
+└── scripts/         # move-workspace, wallpaper-pick
 
 waybar/.config/waybar/
-├── config.jsonc     # modules: workspaces | clock | tray/bt/net/audio/brightness/battery
-└── style.css        # neutral dark, floating rounded island (theme pass coming)
+├── config.jsonc     # clock | workspaces | tray/bt/net/audio/brightness/battery
+└── style.css        # glass pills on a transparent strip
+
+walker/.config/
+├── walker/          # Spotlight config + armoji glass theme
+└── elephant/        # app history, /set + /power menu definitions
 ```

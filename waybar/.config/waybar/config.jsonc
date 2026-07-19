@@ -42,6 +42,7 @@
     "format": "󰂯",
     "format-disabled": "󰂲",
     "format-connected": "󰂱 {num_connections}",
+    "on-click": "foot --app-id=float-tui -e bluetuith",
     "tooltip-format": "{controller_alias}\t{controller_address}",
     "tooltip-format-connected": "{device_enumerate}"
   },
@@ -50,6 +51,7 @@
     "format-wifi": "󰤨 {essid}",
     "format-ethernet": "󰈀",
     "format-disconnected": "󰤭 offline",
+    "on-click": "foot --app-id=float-tui -e nmtui",
     "tooltip-format-wifi": "{essid} ({signalStrength}%)\n{ipaddr}",
     "tooltip-format-ethernet": "{ifname}\n{ipaddr}"
   },

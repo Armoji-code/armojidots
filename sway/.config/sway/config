@@ -9,8 +9,10 @@ set $term foot
 set $files nemo
 
 # Modules
+include ~/.config/sway/input.conf
 include ~/.config/sway/keybinds.conf
 include ~/.config/sway/workspaces.conf
 include ~/.config/sway/appearance.conf
 include ~/.config/sway/effects.conf
+include ~/.config/sway/rules.conf
 include ~/.config/sway/autostart.conf

@@ -1,0 +1,21 @@
+name = "set"
+name_pretty = "Set"
+icon = "preferences-system"
+
+[[entries]]
+text = "wifi"
+keywords = ["wifi", "network", "internet"]
+icon = "network-wireless"
+actions = { "open" = "foot --app-id=float-tui -e nmtui" }
+
+[[entries]]
+text = "blue"
+keywords = ["bluetooth", "blue"]
+icon = "bluetooth"
+actions = { "open" = "foot --app-id=float-tui -e bluetuith" }
+
+[[entries]]
+text = "wallpaper"
+keywords = ["wallpaper", "background"]
+icon = "preferences-desktop-wallpaper"
+actions = { "open" = "~/.config/sway/scripts/wallpaper-pick.sh" }
