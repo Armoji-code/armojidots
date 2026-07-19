@@ -47,6 +47,7 @@ Configs are symlinked into `~/.config` by [GNU Stow](https://www.gnu.org/softwar
 | `Win+1…0` | Switch workspace (per-monitor, via [swaysome](https://gitlab.com/hyask/swaysome)) |
 | `Win+Shift+1…0` | Move window to workspace and follow |
 | `Win+Alt+1…0` | Move the whole workspace (all windows) to slot N and follow |
+| `Win+Shift+S` | Region screenshot → clipboard + notification |
 
 ## Spotlight
 
