@@ -6,6 +6,7 @@
 # Shared variables (used by all modules)
 set $mod Mod4
 set $term foot
+set $files nemo
 
 # Modules
 include ~/.config/sway/keybinds.conf

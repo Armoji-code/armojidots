@@ -20,7 +20,7 @@ My SwayFX dotfiles — built from scratch, one step at a time.
 ## Install
 
 ```sh
-sudo pacman -S swayfx foot stow waybar brightnessctl pavucontrol
+sudo pacman -S swayfx foot stow waybar brightnessctl pavucontrol swaybg nemo
 yay -S swaysome   # per-monitor workspaces (AUR)
 git clone https://github.com/Armoji-code/armojidots.git ~/dotfiles
 cd ~/dotfiles
@@ -34,6 +34,7 @@ Configs are symlinked into `~/.config` by [GNU Stow](https://www.gnu.org/softwar
 | Keys | Action |
 |------|--------|
 | `Win+T` | Open terminal |
+| `Win+E` | Open file manager (Nemo) |
 | `Win+Q` | Close window |
 | `Win+Space` | Toggle floating |
 | `Win+F` | Toggle fullscreen |
@@ -54,7 +55,7 @@ sway/.config/sway/
 ├── workspaces.conf  # swaysome per-monitor workspaces
 ├── appearance.conf  # borders + gaps (12px edges, matching the bar)
 ├── effects.conf     # SwayFX: rounded corners, shadows, dim, blur
-├── autostart.conf   # session launches (waybar)
+├── autostart.conf   # session launches (waybar, swaybg wallpaper)
 └── scripts/         # helpers for what plain keybinds can't do
 
 waybar/.config/waybar/
