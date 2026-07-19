@@ -52,11 +52,12 @@ sway/.config/sway/
 ├── config           # entry point: variables + includes
 ├── keybinds.conf    # apps + window controls
 ├── workspaces.conf  # swaysome per-monitor workspaces
-├── appearance.conf  # borders (SwayFX effects coming)
+├── appearance.conf  # borders + gaps (12px edges, matching the bar)
+├── effects.conf     # SwayFX: rounded corners, shadows, dim, blur
 ├── autostart.conf   # session launches (waybar)
 └── scripts/         # helpers for what plain keybinds can't do
 
 waybar/.config/waybar/
 ├── config.jsonc     # modules: workspaces | clock | tray/bt/net/audio/brightness/battery
-└── style.css        # neutral dark (theme pass coming)
+└── style.css        # neutral dark, floating rounded island (theme pass coming)
 ```

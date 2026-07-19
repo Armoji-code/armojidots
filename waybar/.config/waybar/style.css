@@ -10,6 +10,7 @@
 window#waybar {
   background: rgba(18, 20, 26, 0.88);
   color: #dcdfe4;
+  border-radius: 14px;
 }
 
 /* ── Workspaces ── */
