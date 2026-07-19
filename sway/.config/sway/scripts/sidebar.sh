@@ -4,7 +4,7 @@
 
 name="sidebar-$1"
 case "$1" in
-  term)   cmd="foot --app-id=$name" ;;
+  term)   cmd="env SIDEBAR=1 foot --app-id=$name" ;;
   claude) cmd="foot --app-id=$name claude --resume" ;;
   *)      exit 1 ;;
 esac
