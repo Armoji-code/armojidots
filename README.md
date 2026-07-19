@@ -20,6 +20,7 @@ My SwayFX dotfiles — built from scratch, one step at a time.
 
 ```sh
 sudo pacman -S swayfx foot stow
+yay -S swaysome   # per-monitor workspaces (AUR)
 git clone https://github.com/Armoji-code/armojidots.git ~/dotfiles
 cd ~/dotfiles
 stow sway
@@ -37,3 +38,17 @@ Configs are symlinked into `~/.config` by [GNU Stow](https://www.gnu.org/softwar
 | `Win+F` | Toggle fullscreen |
 | `Win` + left-drag | Move window |
 | `Win` + right-drag | Resize window |
+| `Win+1…0` | Switch workspace (per-monitor, via [swaysome](https://gitlab.com/hyask/swaysome)) |
+| `Win+Shift+1…0` | Move window to workspace and follow |
+
+## Config structure
+
+Modular, one file per concern — new features get their own module:
+
+```
+sway/.config/sway/
+├── config           # entry point: variables + includes
+├── keybinds.conf    # apps + window controls
+├── workspaces.conf  # swaysome per-monitor workspaces
+└── appearance.conf  # borders (SwayFX effects coming)
+```

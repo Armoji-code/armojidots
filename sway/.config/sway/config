@@ -1,15 +1,13 @@
-# SwayFX config — barebones stage
-# Win key as modifier
+# ── armojidots · SwayFX ─────────────────────────────
+# Entry point: shared variables + module includes.
+# Each concern lives in its own file — add features by
+# editing (or adding) a module, not by touching others.
+
+# Shared variables (used by all modules)
 set $mod Mod4
+set $term foot
 
-# Keybinds
-bindsym $mod+t exec foot
-bindsym $mod+q kill
-bindsym $mod+space floating toggle
-bindsym $mod+f fullscreen toggle
-
-# Hold Win + left-drag to move windows, Win + right-drag to resize
-floating_modifier $mod normal
-
-# Thin visible border so windows can be seen on the empty background
-default_border pixel 2
+# Modules
+include ~/.config/sway/keybinds.conf
+include ~/.config/sway/workspaces.conf
+include ~/.config/sway/appearance.conf
