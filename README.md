@@ -1,0 +1,34 @@
+# armojidots
+
+My SwayFX dotfiles — built from scratch, one step at a time.
+
+> Status: **barebones stage** — SwayFX launches with a single keybind. Theming, bar, and the rest are coming.
+
+## What's here
+
+| Package | What it configures |
+|---------|--------------------|
+| `sway/` | SwayFX window manager |
+
+## Setup
+
+- **OS:** CachyOS (Arch)
+- **WM:** [SwayFX](https://github.com/WillPower3309/swayfx)
+- **Terminal:** [foot](https://codeberg.org/dnkl/foot)
+
+## Install
+
+```sh
+sudo pacman -S swayfx foot stow
+git clone https://github.com/Armoji-code/armojidots.git ~/dotfiles
+cd ~/dotfiles
+stow sway
+```
+
+Configs are symlinked into `~/.config` by [GNU Stow](https://www.gnu.org/software/stow/) — editing the live config edits the repo.
+
+## Keybinds (so far)
+
+| Keys | Action |
+|------|--------|
+| `Win+T` | Open terminal |

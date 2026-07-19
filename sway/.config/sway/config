@@ -1,0 +1,9 @@
+# SwayFX config — barebones stage
+# Win key as modifier
+set $mod Mod4
+
+# The one and only keybind: Win+T opens a terminal
+bindsym $mod+t exec foot
+
+# Thin visible border so windows can be seen on the empty background
+default_border pixel 2
