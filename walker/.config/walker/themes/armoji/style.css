@@ -1,8 +1,4 @@
-@define-color window_bg_color rgba(18, 20, 26, 0.92);
-@define-color accent_bg_color #3a4150;
-@define-color theme_fg_color #dcdfe4;
-@define-color error_bg_color #C34043;
-@define-color error_fg_color #DCD7BA;
+@import url("colors.css");
 
 * {
   all: unset;
@@ -33,9 +29,8 @@ scrollbar {
     0 19px 38px rgba(0, 0, 0, 0.3),
     0 15px 12px rgba(0, 0, 0, 0.22);
   background: @window_bg_color;
-  padding: 20px;
+  padding: 16px;
   border-radius: 14px;
-  border: 1px solid darker(@accent_bg_color);
 }
 
 .preview-box,
@@ -60,8 +55,9 @@ scrollbar {
 }
 
 .input {
-  caret-color: @theme_fg_color;
-  background: lighter(@window_bg_color);
+  caret-color: @accent_bg_color;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
   padding: 10px;
   color: @theme_fg_color;
 }
@@ -100,7 +96,7 @@ child {
 /* child:hover .item-box, */
 child:selected .item-box,
 row:selected .item-box {
-  background: alpha(@accent_bg_color, 0.25);
+  background: alpha(@accent_bg_color, 0.32);
 }
 
 .item-text-box {

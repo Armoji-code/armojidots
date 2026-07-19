@@ -9,3 +9,8 @@ pick=$(find "$WALLDIR" -maxdepth 1 -type f \( -iname '*.jpg' -o -iname '*.jpeg' 
 ln -sf "$WALLDIR/$pick" "$WALLDIR/current"
 pkill -x swaybg
 swaymsg exec "swaybg -i '$WALLDIR/current' -m fill"
+
+# wallpaper-driven palette follows the new wallpaper
+if [ "$(cat "$HOME/.local/state/armojidots/theme" 2>/dev/null)" = "wallpaper" ]; then
+  ~/.config/sway/scripts/theme.sh apply wallpaper
+fi

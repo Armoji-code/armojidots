@@ -19,3 +19,9 @@ text = "wallpaper"
 keywords = ["wallpaper", "background"]
 icon = "preferences-desktop-wallpaper"
 actions = { "open" = "~/.config/sway/scripts/wallpaper-pick.sh" }
+
+[[entries]]
+text = "color"
+keywords = ["color", "theme", "palette"]
+icon = "preferences-color"
+actions = { "open" = "~/.config/sway/scripts/theme.sh pick" }
