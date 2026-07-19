@@ -48,6 +48,8 @@ Configs are symlinked into `~/.config` by [GNU Stow](https://www.gnu.org/softwar
 | `Win+Shift+1…0` | Move window to workspace and follow |
 | `Win+Alt+1…0` | Move the whole workspace (all windows) to slot N and follow |
 | `Win+Shift+S` | Region screenshot → clipboard + notification |
+| `Win+R` | Toggle quick-access terminal sidebar (left, sticky across workspaces) |
+| `Win+Shift+R` | Toggle Claude Code sidebar (same, runs `claude --resume`) |
 
 ## Spotlight
 
@@ -73,7 +75,8 @@ sway/.config/sway/
 └── scripts/         # move-workspace, wallpaper-pick
 
 waybar/.config/waybar/
-├── config.jsonc     # clock | workspaces | tray/bt/net/audio/brightness/battery
+├── config.jsonc     # clock | workspaces | tray/bt/net/audio/brightness/battery/power
+├── scripts/         # power-profile toggle
 └── style.css        # glass pills on a transparent strip
 
 walker/.config/

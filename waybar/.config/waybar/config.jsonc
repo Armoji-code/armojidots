@@ -13,7 +13,7 @@
 
   "modules-left": ["clock"],
   "modules-center": ["sway/workspaces"],
-  "modules-right": ["tray", "bluetooth", "network", "pulseaudio", "backlight", "battery"],
+  "modules-right": ["tray", "bluetooth", "network", "pulseaudio", "backlight", "battery", "custom/power"],
 
   // swaysome names workspaces 11..110 (monitor 1), 21..210 (monitor 2);
   // format-icons displays them as 1..10 per monitor
@@ -75,5 +75,14 @@
     "format": "{icon} {capacity}%",
     "format-charging": "󰂄 {capacity}%",
     "format-icons": ["󰁺", "󰁼", "󰁾", "󰂀", "󰁹"]
+  },
+
+  // performance profile toggle (power-profiles-daemon), click to cycle
+  "custom/power": {
+    "exec": "~/.config/waybar/scripts/power-profile.sh status",
+    "return-type": "json",
+    "interval": "once",
+    "signal": 8,
+    "on-click": "~/.config/waybar/scripts/power-profile.sh toggle"
   }
 }
