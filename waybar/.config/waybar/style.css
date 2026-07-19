@@ -1,4 +1,6 @@
 /* ── armojidots · Waybar ─────────────────────────────
+   Glass pills on a fully transparent strip.
+   SwayFX blurs behind each pill (blur_ignore_transparent).
    Neutral dark for now — real theme comes later. */
 
 * {
@@ -8,23 +10,33 @@
 }
 
 window#waybar {
-  background: rgba(18, 20, 26, 0.88);
+  background: transparent;
   color: #dcdfe4;
-  border-radius: 14px;
 }
 
-/* ── Workspaces ── */
+/* ── The three pills ── */
+.modules-left,
+.modules-center,
+.modules-right {
+  background: rgba(18, 20, 26, 0.55);
+  border-radius: 14px;
+  padding: 0 4px;
+  margin-top: 3px;
+  margin-bottom: 3px;
+}
+
+/* ── Workspaces (center pill) ── */
 #workspaces button {
-  padding: 0 8px;
+  padding: 0 7px;
   margin: 3px 2px;
-  border-radius: 8px;
+  border-radius: 10px;
   color: #8a8f98;
   background: transparent;
 }
 
 #workspaces button.focused {
   color: #dcdfe4;
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.14);
 }
 
 #workspaces button.urgent {
@@ -35,7 +47,7 @@ window#waybar {
   background: rgba(255, 255, 255, 0.08);
 }
 
-/* ── Modules ── */
+/* ── Modules: each gets its own inner pill ── */
 #clock,
 #tray,
 #bluetooth,
@@ -43,8 +55,10 @@ window#waybar {
 #pulseaudio,
 #backlight,
 #battery {
-  padding: 0 10px;
-  margin: 3px 0;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  padding: 0 9px;
+  margin: 3px 2px;
 }
 
 #battery.warning {
