@@ -72,7 +72,11 @@ wallpaper — default, follows wallpaper changes), ruby, orange, dandelion,
 emerald, cobalt, bubblegum, purpur, b&w. One seed color derives a six-role
 family (accent, dim, bg, surface, fg, muted) which `scripts/theme.sh`
 writes into waybar, foot (including the full terminal ANSI palette), sway
-borders, walker, and swaync — everything flips at once.
+borders, walker, swaync, GTK 3/4 apps (full window tinting + accent), and
+Papirus folder icons (hue-matched recolor) — everything flips at once.
+`/set tone` (light / heavy / loud) is a master intensity dial for how hard
+the palette sits on all of it. GTK windows (Nemo, pavucontrol) also get
+slight transparency + SwayFX blur to match the glass look.
 
 ## Config structure
 

@@ -25,3 +25,9 @@ text = "color"
 keywords = ["color", "theme", "palette"]
 icon = "preferences-color"
 actions = { "open" = "~/.config/sway/scripts/theme.sh pick" }
+
+[[entries]]
+text = "tone"
+keywords = ["tone", "intensity", "saturation"]
+icon = "preferences-desktop-display"
+actions = { "open" = "~/.config/sway/scripts/theme.sh tone-pick" }
