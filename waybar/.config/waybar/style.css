@@ -58,6 +58,7 @@ window#waybar {
 #backlight,
 #battery,
 #custom-power,
+#idle_inhibitor,
 #custom-notifications {
   background: rgba(255, 255, 255, 0.07);
   border-radius: 10px;
@@ -83,6 +84,10 @@ window#waybar {
 #custom-notifications.dnd-inhibited-none,
 #custom-notifications.dnd-inhibited-notification {
   color: @muted;
+}
+
+#idle_inhibitor.activated {
+  color: @accent;
 }
 
 /* accent touches */

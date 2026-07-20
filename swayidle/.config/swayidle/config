@@ -1,0 +1,7 @@
+# ── armojidots · swayidle ───────────────────────────
+# 5 min idle → lock. 10 min → screen off (on again on activity).
+# Always lock before the system sleeps.
+
+timeout 300 'swaylock -f'
+timeout 600 'swaymsg "output * power off"' resume 'swaymsg "output * power on"'
+before-sleep 'swaylock -f'

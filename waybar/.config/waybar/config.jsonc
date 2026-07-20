@@ -13,7 +13,7 @@
 
   "modules-left": ["clock"],
   "modules-center": ["sway/workspaces"],
-  "modules-right": ["tray", "bluetooth", "network", "pulseaudio", "backlight", "battery", "custom/power", "custom/notifications"],
+  "modules-right": ["tray", "bluetooth", "network", "pulseaudio", "backlight", "battery", "custom/power", "idle_inhibitor", "custom/notifications"],
 
   // swaysome names workspaces 11..110 (monitor 1), 21..210 (monitor 2);
   // format-icons displays them as 1..10 per monitor
@@ -78,6 +78,18 @@
   },
 
   // performance profile toggle (power-profiles-daemon), click to cycle
+  // auto-lock toggle: 󰅶 = staying awake (default), 󰒲 = auto-lock armed
+  "idle_inhibitor": {
+    "format": "{icon}",
+    "format-icons": {
+      "activated": "󰅶",
+      "deactivated": "󰒲"
+    },
+    "start-activated": true,
+    "tooltip-format-activated": "auto-lock: OFF (click to arm)",
+    "tooltip-format-deactivated": "auto-lock: ON (5m lock, 10m screen off)"
+  },
+
   // bell: notification count + control center on click (swaync)
   "custom/notifications": {
     "format": "{icon}",
