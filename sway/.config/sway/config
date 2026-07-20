@@ -11,6 +11,7 @@ set $files nemo
 # Modules
 include ~/.config/sway/input.conf
 include ~/.config/sway/keybinds.conf
+include ~/.config/sway/media-keys.conf
 include ~/.config/sway/workspaces.conf
 include ~/.config/sway/appearance.conf
 include ~/.config/sway/effects.conf
