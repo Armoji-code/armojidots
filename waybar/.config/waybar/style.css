@@ -57,7 +57,8 @@ window#waybar {
 #pulseaudio,
 #backlight,
 #battery,
-#custom-power {
+#custom-power,
+#custom-notifications {
   background: rgba(255, 255, 255, 0.07);
   border-radius: 10px;
   padding: 0 9px;
@@ -70,6 +71,18 @@ window#waybar {
 
 #custom-power.power-saver {
   color: #98c379;
+}
+
+#custom-notifications.notification,
+#custom-notifications.inhibited-notification {
+  color: @accent;
+}
+
+#custom-notifications.dnd-none,
+#custom-notifications.dnd-notification,
+#custom-notifications.dnd-inhibited-none,
+#custom-notifications.dnd-inhibited-notification {
+  color: @muted;
 }
 
 /* accent touches */

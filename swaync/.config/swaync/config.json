@@ -13,7 +13,12 @@
   "keyboard-shortcuts": true,
   "hide-on-clear": true,
   "hide-on-action": true,
-  "widgets": ["inhibitors", "title", "dnd", "notifications"],
+  "widgets": [
+    "inhibitors",
+    "title",
+    "dnd",
+    "notifications"
+  ],
   "widget-config": {
     "title": {
       "text": "Notifications",
@@ -23,5 +28,6 @@
     "dnd": {
       "text": "Do not disturb"
     }
-  }
+  },
+  "notification-grouping": false
 }

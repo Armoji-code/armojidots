@@ -56,6 +56,7 @@ Configs are symlinked into `~/.config` by [GNU Stow](https://www.gnu.org/softwar
 | `Win+Shift+S` | Region screenshot → clipboard + notification |
 | `Win+R` | Toggle quick-access terminal sidebar (left, sticky across workspaces) |
 | `Win+Shift+R` | Toggle Claude Code sidebar (same, runs `claude --resume`) |
+| `Win+N` | Toggle notification center (swaync) |
 
 ## Spotlight
 

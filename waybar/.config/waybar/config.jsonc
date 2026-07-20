@@ -13,7 +13,7 @@
 
   "modules-left": ["clock"],
   "modules-center": ["sway/workspaces"],
-  "modules-right": ["tray", "bluetooth", "network", "pulseaudio", "backlight", "battery", "custom/power"],
+  "modules-right": ["tray", "bluetooth", "network", "pulseaudio", "backlight", "battery", "custom/power", "custom/notifications"],
 
   // swaysome names workspaces 11..110 (monitor 1), 21..210 (monitor 2);
   // format-icons displays them as 1..10 per monitor
@@ -78,6 +78,26 @@
   },
 
   // performance profile toggle (power-profiles-daemon), click to cycle
+  // bell: notification count + control center on click (swaync)
+  "custom/notifications": {
+    "format": "{icon}",
+    "format-icons": {
+      "notification": "󱅫",
+      "none": "󰂚",
+      "dnd-notification": "󰂛",
+      "dnd-none": "󰂛",
+      "inhibited-notification": "󱅫",
+      "inhibited-none": "󰂚",
+      "dnd-inhibited-notification": "󰂛",
+      "dnd-inhibited-none": "󰂛"
+    },
+    "return-type": "json",
+    "exec": "swaync-client -swb",
+    "on-click": "swaync-client -t -sw",
+    "escape": true,
+    "tooltip": false
+  },
+
   "custom/power": {
     "exec": "~/.config/waybar/scripts/power-profile.sh status",
     "return-type": "json",
