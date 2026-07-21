@@ -25,15 +25,16 @@ My SwayFX dotfiles — built from scratch, one step at a time.
 ## Setup
 
 - **OS:** CachyOS (Arch)
-- **WM:** [SwayFX](https://github.com/WillPower3309/swayfx)
+- **WM:** [SwayFX](https://github.com/WillPower3309/swayfx) (git `0.6+` — for window animations)
 - **Terminal:** [foot](https://codeberg.org/dnkl/foot)
 
 ## Install
 
 ```sh
-sudo pacman -S swayfx foot stow waybar brightnessctl pavucontrol swaybg \
-       nemo swaync swayidle grim slurp wl-clipboard jq
-yay -S swaysome walker-bin swaylock-effects nwg-dock elephant-desktopapplications \
+sudo pacman -S wlroots0.20 foot stow waybar brightnessctl pavucontrol swaybg \
+       nemo swaync swayidle autotiling grim slurp wl-clipboard jq
+# swayfx-git (0.6+) for window animations — the tagged 0.5.3 has none
+yay -S swayfx-git swaysome walker-bin swaylock-effects nwg-dock elephant-desktopapplications \
        elephant-calc elephant-runner elephant-websearch elephant-menus bluetuith-bin
 git clone https://github.com/Armoji-code/armojidots.git ~/dotfiles
 cd ~/dotfiles
@@ -113,8 +114,9 @@ sway/.config/sway/
 ├── workspaces.conf  # swaysome per-monitor workspaces
 ├── appearance.conf  # borders + gaps (12px edges, matching the bar)
 ├── effects.conf     # SwayFX: rounded corners, shadows, dim, blur, layer glass
+├── animations.conf  # window open/close pop animation (swayfx-git 0.6+)
 ├── rules.conf       # window rules (floating glass TUI terminals)
-├── autostart.conf   # waybar, dock, swaync, walker service, swayidle, swaybg wallpaper
+├── autostart.conf   # autotiling, waybar, dock, swaync, walker, swayidle, swaybg
 └── scripts/         # move-workspace, wallpaper-pick, theme engine, super-tap
 
 waybar/.config/waybar/

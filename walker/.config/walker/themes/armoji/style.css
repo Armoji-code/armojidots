@@ -24,11 +24,14 @@ scrollbar {
   opacity: 0;
 }
 
+/* No CSS box-shadow: the compositor blurs every non-transparent pixel of
+   this layer, and a translucent drop-shadow halo would get blurred too —
+   bleeding the frosted glass ~50px past the pill. Border-radius here must
+   match `corner_radius` on the "walker" layer_effect so the blur lines up
+   with the visible edge. A hairline accent border defines the rim instead. */
 .box-wrapper {
-  box-shadow:
-    0 19px 38px rgba(0, 0, 0, 0.3),
-    0 15px 12px rgba(0, 0, 0, 0.22);
   background: @window_bg_color;
+  border: 1px solid alpha(@accent_bg_color, 0.22);
   padding: 16px;
   border-radius: 14px;
 }

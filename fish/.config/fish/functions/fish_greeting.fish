@@ -1,11 +1,8 @@
 function fish_greeting
-    # sidebars are narrow — they get a mini greeting (SIDEBAR set by sidebar.sh);
-    # the width check catches any other skinny terminal
-    if set -q SIDEBAR; or test (tput cols 2>/dev/null; or echo 80) -lt 80
-        set_color green
-        echo "HI ARMOJI ▪"
-        set_color normal
-    else
-        fastfetch
-    end
+    # tiered fetch (mini / stacked / wide) that follows terminal width and
+    # re-renders on resize — logic + WINCH handler live in
+    # conf.d/armoji_greeting.fish
+    set -g __armoji_greeting_fresh 1
+    set -g __armoji_greeting_tier (__armoji_tier)
+    __armoji_fetch
 end
