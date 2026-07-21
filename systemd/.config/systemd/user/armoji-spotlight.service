@@ -1,0 +1,14 @@
+[Unit]
+Description=Armoji Spotlight launcher (resident)
+# Stays resident with its window hidden so the keybind opens it instantly
+# instead of cold-starting the GTK app. Needs elephant for search/app data.
+After=graphical-session.target elephant.service
+Wants=elephant.service
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/armoji-spotlight --daemon
+Restart=on-failure
+
+[Install]
+WantedBy=graphical-session.target
