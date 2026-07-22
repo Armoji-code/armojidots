@@ -11,7 +11,45 @@
   "margin-left": 12,
   "margin-right": 12,
 
-  "modules-left": ["clock"],
+  "modules-left": ["clock", "group/media"],
+
+  // media pill: cava visualizer + transport buttons + title/artist
+  "group/media": {
+    "orientation": "horizontal",
+    "modules": ["custom/cava", "custom/media-prev", "custom/media-playpause", "custom/media-next", "custom/media-info"]
+  },
+
+  "custom/cava": {
+    "exec": "~/.config/waybar/scripts/media.sh cava",
+    "tooltip": false
+  },
+
+  "custom/media-prev": {
+    "format": "󰒮",
+    "on-click": "playerctl previous",
+    "tooltip": false
+  },
+
+  "custom/media-playpause": {
+    "exec": "~/.config/waybar/scripts/media.sh playpause",
+    "return-type": "json",
+    "on-click": "playerctl play-pause",
+    "tooltip": false
+  },
+
+  "custom/media-next": {
+    "format": "󰒭",
+    "on-click": "playerctl next",
+    "tooltip": false
+  },
+
+  "custom/media-info": {
+    "exec": "~/.config/waybar/scripts/media.sh info",
+    "return-type": "json",
+    "escape": false,
+    "on-click": "playerctl play-pause"
+  },
+
   "modules-center": ["sway/workspaces"],
   "modules-right": ["tray", "bluetooth", "network", "pulseaudio", "backlight", "battery", "custom/power", "idle_inhibitor", "custom/notifications"],
 
