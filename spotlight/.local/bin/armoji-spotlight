@@ -1,23 +1,26 @@
 #!/usr/bin/env python3
 # ── armojidots · Spotlight ──────────────────────────────────────────
-# A custom launcher built as TWO coordinated normal windows so it gets
-# SwayFX's open/close animation AND crisp per-pill blur:
+# A custom launcher built as TWO coordinated windows:
 #
-#   • search window  — a fixed-size capsule, locked in place. Holds the
-#     entry + keyboard focus. Never grows or moves.
-#   • list window    — the content panel, anchored directly below the
-#     search bar and growing DOWNWARD as results change.
+#   • search window  — a LAYER-SHELL surface (namespace "spotlight-search").
+#     A normal window's corner_radius is clamped by SwayFX to ~0.36×height,
+#     so it can't be a true capsule; a layer surface can, because
+#     `layer_effects … blur_ignore_transparent` clips the blur to the
+#     opaque pixels — i.e. the CSS-drawn capsule (border-radius = half its
+#     height). Holds the entry + keyboard focus (ON_DEMAND). Placed by
+#     anchors + margins, not by `swaymsg move`.
+#   • list window    — a NORMAL floating window (keeps SwayFX's open/close
+#     animation), anchored directly below the search bar via `swaymsg move`
+#     and growing DOWNWARD as results change. Filled edge-to-edge by one
+#     translucent pill so its corner_radius (10) clips its blur cleanly.
 #
-# Each window is filled edge-to-edge by a single translucent pill, so there
-# are no transparent gaps inside a window for blur to bleed into; the sway
-# rules give each window a corner_radius matching its pill (capsule / 10px),
-# which clips its blur to that exact shape. The gap between the two windows
-# is real desktop, so it stays crisp. blur_ignore_transparent (window-only
-# unsupported in SwayFX) is therefore not needed at all.
+# The gap between the two windows is real desktop, so it stays crisp. If the
+# gtk4-layer-shell binding is missing, the search window falls back to a
+# normal floating window (rounded rectangle, no true capsule).
 #
 # Elephant is the search/data backend (fuzzy apps + usage ranking + calc);
 # we own the UI, so every mode gets its own layout — a grid when empty, a
-# list when typing, and our own command providers (/power /set /web /bash).
+# list when typing, and our own command providers (/power /set /web /keys).
 #
 # Resident: started once as `armoji-spotlight --daemon` (systemd user
 # service); the keybind runs `armoji-spotlight`, which toggles the windows
@@ -27,6 +30,11 @@
 import gi, json, os, subprocess, sys
 from urllib.parse import quote
 gi.require_version("Gtk", "4.0")
+try:
+    gi.require_version("Gtk4LayerShell", "1.0")
+    from gi.repository import Gtk4LayerShell as LayerShell
+except (ValueError, ImportError):
+    LayerShell = None   # fall back to a normal floating search window
 from gi.repository import Gtk, Gdk, Gio, GLib
 
 APP_ID = "org.armojidots.Spotlight"   # shared app_id; windows differ by title
@@ -86,28 +94,82 @@ def cmd_power(arg):
 
 
 def cmd_set(arg):
-    a = arg.strip().lower()
-    return [item(p, "palette", "preferences-desktop-theme", "cmd",
-                 f"{THEME} apply {p}") for p in PALETTES if a in p.lower()]
+    # two-level: "/set" shows categories; Colors/Tone drill down (fill), while
+    # Wi-Fi/Bluetooth run straight away.
+    parts = arg.strip().split(None, 1)
+    sub = parts[0].lower() if parts else ""
+    rest = parts[1].strip().lower() if len(parts) > 1 else ""
+
+    cats = [  # name, match-key, icon, kind, value
+        ("Colors",    "color",     "preferences-desktop-theme",   "fill", "/set color "),
+        ("Tone",      "tone",      "preferences-desktop-display", "fill", "/set tone "),
+        ("Wi-Fi",     "wifi",      "network-wireless",            "cmd",
+         "foot --app-id=float-tui -e nmtui"),
+        ("Bluetooth", "bluetooth", "bluetooth",                   "cmd",
+         "foot --app-id=float-tui -e bluetuith"),
+    ]
+    known = {"color", "colors", "tone", "wifi", "bluetooth", "blue"}
+    if sub not in known:   # "/set" or a half-typed category → show the menu
+        return [item(name, "", icon, kind, val)
+                for name, key, icon, kind, val in cats
+                if sub in name.lower() or sub in key]
+    if sub in ("color", "colors"):
+        return [item(p, "palette", "preferences-desktop-theme", "cmd",
+                     f"{THEME} apply {p}") for p in PALETTES if rest in p.lower()]
+    if sub == "tone":
+        return [item(t.capitalize(), "intensity", "preferences-desktop-display",
+                     "cmd", f"{THEME} tone {t}")
+                for t in ("light", "heavy", "loud") if rest in t]
+    if sub == "wifi":
+        return [item("Wi-Fi (nmtui)", "", "network-wireless", "cmd",
+                     "foot --app-id=float-tui -e nmtui")]
+    return [item("Bluetooth (bluetuith)", "", "bluetooth", "cmd",
+                 "foot --app-id=float-tui -e bluetuith")]
 
 
 def cmd_web(arg):
-    if not arg.strip():
+    q = arg.strip()
+    if not q:
         return [item("Type a query to search the web…", "", "web-browser",
                      "noop", "")]
-    return [item(f"Search the web for “{arg}”", "duckduckgo", "web-browser",
-                 "cmd", f"xdg-open 'https://duckduckgo.com/?q={quote(arg)}'")]
+    # open Zen directly (quote() percent-encodes q, so the URL is shell-safe)
+    url = f"https://www.google.com/search?q={quote(q)}"
+    return [item(f"Search the web for “{q}”", "google · zen", "web-browser",
+                 "cmd", f'zen-browser "{url}"')]
 
 
-def cmd_bash(arg):
-    if not arg.strip():
-        return [item("Type a shell command…", "", "utilities-terminal",
-                     "noop", "")]
-    return [item(f"Run: {arg}", "shell", "utilities-terminal", "cmd", arg)]
+# keybind cheat-sheet (keys, description) — mirrors the sway config
+KEYBINDS = [
+    ("Win + T",            "Open terminal (foot)"),
+    ("Win + E",            "Open file manager (Nemo)"),
+    ("Win + W",            "Open web browser (Zen)"),
+    ("Win + D",            "Toggle Spotlight launcher"),
+    ("Win + Q",            "Close focused window"),
+    ("Win + Space",        "Toggle floating"),
+    ("Win + F",            "Toggle fullscreen"),
+    ("Win + L",            "Lock screen"),
+    ("Win + N",            "Toggle notification center"),
+    ("Win + R",            "Toggle terminal sidebar"),
+    ("Win + Shift + R",    "Toggle Claude Code sidebar"),
+    ("Win + Shift + S",    "Screenshot region → clipboard"),
+    ("Win + drag",         "Move window (left-drag) / resize (right-drag)"),
+    ("Win + 1…0",          "Switch workspace (per-monitor)"),
+    ("Win + Shift + 1…0",  "Move window to workspace and follow"),
+    ("Win + Alt + 1…0",    "Move whole workspace to slot and follow"),
+]
+
+
+def cmd_keys(arg):
+    a = arg.strip().lower()
+    rows = sorted(KEYBINDS, key=lambda kb: kb[0].lower())
+    hits = [(k, d) for k, d in rows if a in k.lower() or a in d.lower()]
+    if not hits:
+        return [item("No matching shortcut", "", "dialog-question", "noop", "")]
+    return [item(k, d, "input-keyboard", "noop", "") for k, d in hits]
 
 
 COMMANDS = {"/power": cmd_power, "/set": cmd_set,
-            "/web": cmd_web, "/bash": cmd_bash}
+            "/web": cmd_web, "/keys": cmd_keys}
 
 
 def make_icon(name, px):
@@ -151,13 +213,30 @@ class Spotlight(Gtk.Application):
             return
         self.load_css()
 
-        # search window — fixed capsule
+        # search window — layer-shell surface so it can be a TRUE capsule
         self.search_win = Gtk.ApplicationWindow(application=self)
         self.search_win.set_title("spotlight-search")
         self.search_win.set_decorated(False)
         self.search_win.set_resizable(False)
         self.search_win.add_css_class("spotlight")
         self.search_win.set_hide_on_close(True)
+        if LayerShell is not None:
+            LayerShell.init_for_window(self.search_win)
+            LayerShell.set_namespace(self.search_win, "spotlight-search")
+            LayerShell.set_layer(self.search_win, LayerShell.Layer.OVERLAY)
+            # EXCLUSIVE: with a normal list window also mapped, ON_DEMAND can't
+            # pull keyboard focus onto the layer surface, so typing/arrows/Esc
+            # (all on this window's key controller) would go to the list window
+            # instead. EXCLUSIVE forces the seat's keyboard onto the search bar.
+            LayerShell.set_keyboard_mode(self.search_win,
+                                         LayerShell.KeyboardMode.EXCLUSIVE)
+            # anchor top-left; margins in position() do the actual placement.
+            # exclusive_zone -1 => margins are from the true output edge (not
+            # the waybar-shrunk usable area), so they match the list window's
+            # absolute coordinates.
+            LayerShell.set_anchor(self.search_win, LayerShell.Edge.TOP, True)
+            LayerShell.set_anchor(self.search_win, LayerShell.Edge.LEFT, True)
+            LayerShell.set_exclusive_zone(self.search_win, -1)
         self.search_win.connect("notify::is-active", self.on_active)
 
         search_pill = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
@@ -252,20 +331,44 @@ class Spotlight(Gtk.Application):
         if not o:
             return False
         r = o["rect"]
-        x = r["x"] + (r["width"] - WIDTH) // 2
-        sy = r["y"] + int(r["height"] * TOP_FRAC)
-        ly = sy + SEARCH_H + GAP
-        # move the list first, search last, then focus search — so keyboard
-        # focus lands on the entry (swaymsg focuses the last-touched window)
+        mx = (r["width"] - WIDTH) // 2          # centered horizontally
+        my = int(r["height"] * TOP_FRAC)        # anchored this far down
+        x = r["x"] + mx
+        ly = r["y"] + my + SEARCH_H + GAP
+        # search bar: layer-shell surface placed by anchors + margins
+        if LayerShell is not None:
+            mon = self._gdk_monitor(o.get("name"))
+            if mon is not None:
+                LayerShell.set_monitor(self.search_win, mon)
+            LayerShell.set_margin(self.search_win, LayerShell.Edge.LEFT, mx)
+            LayerShell.set_margin(self.search_win, LayerShell.Edge.TOP, my)
+        else:
+            swaymsg(f'[app_id="{APP_ID}" title="spotlight-search"] '
+                    f'move absolute position {x} {r["y"] + my}')
+        # list: normal window, moved directly below the search bar
         swaymsg(f'[app_id="{APP_ID}" title="spotlight-list"] '
                 f'move absolute position {x} {ly}')
-        swaymsg(f'[app_id="{APP_ID}" title="spotlight-search"] '
-                f'move absolute position {x} {sy}')
         self.focus_search()
         return False    # one-shot
 
+    def _gdk_monitor(self, name):
+        if not name:
+            return None
+        mons = Gdk.Display.get_default().get_monitors()
+        for i in range(mons.get_n_items()):
+            m = mons.get_item(i)
+            if m.get_connector() == name:
+                return m
+        return None
+
     def focus_search(self):
-        swaymsg(f'[app_id="{APP_ID}" title="spotlight-search"] focus')
+        # a layer surface isn't addressable by swaymsg title; re-present it so
+        # gtk4-layer-shell requests keyboard focus (ON_DEMAND) away from the
+        # normal list window, then focus the entry widget inside it
+        if LayerShell is None:
+            swaymsg(f'[app_id="{APP_ID}" title="spotlight-search"] focus')
+        else:
+            self.search_win.present()
         self.entry.grab_focus()
 
     def _any_active(self):

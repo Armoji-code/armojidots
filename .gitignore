@@ -3,3 +3,4 @@
 
 # machine-local fish state
 fish/.config/fish/fish_variables
+__pycache__/

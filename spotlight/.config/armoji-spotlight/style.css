@@ -27,13 +27,13 @@ window.spotlight.background {
   border: none;
 }
 
-/* search window: the pill is a plain RECTANGLE that fills the window; ALL the
-   rounding is done by SwayFX's corner_radius (14) on the window. This avoids a
-   GTK-vs-SwayFX arc mismatch entirely — there's no GTK rounded edge to leave a
-   frost speck. (No border either: a rectangular border would get clipped at the
-   rounded corners and look broken.) */
+/* search window: now a LAYER-SHELL surface, so GTK draws the capsule itself
+   (border-radius = half the 40px height = 20) and SwayFX's
+   `layer_effects "spotlight-search" … blur_ignore_transparent` clips the blur
+   to exactly these opaque pixels — real rounded-end glass, crisp desktop in
+   the transparent corners. No border (it would clip raggedly at the ends). */
 .search-pill {
-  border-radius: 0;
+  border-radius: 20px;
   border: none;
   padding: 0 18px;
 }
