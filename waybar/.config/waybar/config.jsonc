@@ -13,10 +13,24 @@
 
   "modules-left": ["clock", "group/media"],
 
-  // media pill: cava visualizer + transport buttons + title/artist
+  // media pill: cover art + cava visualizer + transport buttons + title/artist
   "group/media": {
     "orientation": "horizontal",
-    "modules": ["custom/cava", "custom/media-prev", "custom/media-playpause", "custom/media-next", "custom/media-info"]
+    "modules": ["custom/cover-fetch", "custom/cava", "custom/media-prev", "custom/media-playpause", "custom/media-next", "image#cover", "custom/media-info"]
+  },
+
+  // background resolver: writes ~/.cache/armoji-waybar/cover.png; itself invisible
+  "custom/cover-fetch": {
+    "exec": "~/.config/waybar/scripts/media.sh cover",
+    "interval": "once",
+    "tooltip": false
+  },
+
+  // waybar's image module just polls the path this fetcher keeps updated
+  "image#cover": {
+    "path": "/home/armin/.cache/armoji-waybar/cover.png",
+    "size": 22,
+    "interval": 2
   },
 
   "custom/cava": {

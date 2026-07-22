@@ -25,6 +25,9 @@ window#waybar {
   padding: 0 4px;
   margin-top: 3px;
   margin-bottom: 3px;
+  /* keep the bar's thickness constant even when the media pill has no
+     two-line title/artist to stretch it (e.g. nothing playing) */
+  min-height: 28px;
 }
 
 /* ── Workspaces (center pill) ── */
@@ -97,14 +100,26 @@ window#waybar {
   padding: 0 4px;
   margin: 3px 2px;
 }
+#custom-cover-fetch {
+  /* invisible: this module only runs the background art-resolver script */
+  padding: 0;
+  min-width: 0;
+}
+image#cover,
+#cover {
+  border-radius: 999px;
+  margin: 0 6px 0 0;
+}
 #custom-cava {
   color: @accent;
   padding: 0 6px 0 10px;
 }
 #custom-media-prev,
-#custom-media-playpause,
-#custom-media-next {
+#custom-media-playpause {
   padding: 0 4px;
+}
+#custom-media-next {
+  padding: 0 9px 0 4px;
 }
 #custom-media-playpause {
   color: @accent;
