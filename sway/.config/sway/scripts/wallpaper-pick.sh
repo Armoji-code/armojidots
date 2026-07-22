@@ -1,16 +1,28 @@
 #!/bin/sh
-# /set wallpaper: pick from the repo wallpapers, apply + persist via symlink
-WALLDIR="$HOME/dotfiles/wallpapers"
+# Set the wallpaper and persist it via the `current` symlink that swaybg and
+# theme.sh both read. Wallpapers live in ~/Pictures/Wallpapers.
+#   wallpaper-pick.sh "<path>"   set that image directly
+#                                (used by spotlight's /set wallpaper thumbnails)
+#   wallpaper-pick.sh            no arg → dmenu picker (fallback)
+WALLDIR="$HOME/Pictures/Wallpapers"
+LINK="$HOME/dotfiles/wallpapers/current"
 
-pick=$(find "$WALLDIR" -maxdepth 1 -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) \
-         -printf '%f\n' | sort | walker --dmenu -p "wallpaper ❯")
-[ -z "$pick" ] && exit 0
+if [ -n "$1" ]; then
+  pick="$1"
+else
+  name=$(find "$WALLDIR" -maxdepth 1 -type f \
+           \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) \
+           -printf '%f\n' | sort | walker --dmenu -p "wallpaper ❯")
+  [ -z "$name" ] && exit 0
+  pick="$WALLDIR/$name"
+fi
+[ -f "$pick" ] || { notify-send "wallpaper" "not found: $pick"; exit 1; }
 
-ln -sf "$WALLDIR/$pick" "$WALLDIR/current"
+ln -sf "$pick" "$LINK"
 pkill -x swaybg
-swaymsg exec "swaybg -i '$WALLDIR/current' -m fill"
+swaymsg exec "swaybg -i '$LINK' -m fill"
 
-# wallpaper-driven palette follows the new wallpaper
+# the wallpaper-driven palette follows the new wallpaper
 if [ "$(cat "$HOME/.local/state/armojidots/theme" 2>/dev/null)" = "wallpaper" ]; then
-  ~/.config/sway/scripts/theme.sh apply wallpaper
+  "$HOME/.config/sway/scripts/theme.sh" apply wallpaper
 fi

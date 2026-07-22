@@ -205,6 +205,11 @@ EOF
 @define-color accent_color $ACC;
 @define-color theme_selected_bg_color $ACC;
 @define-color theme_selected_fg_color #ffffff;
+/* adw-gtk3 keys list/sidebar selection + link highlights off success_color,
+   which defaults to green — tie it to the accent so nothing stays green */
+@define-color success_bg_color $ACC;
+@define-color success_color $ACC;
+@define-color success_fg_color #ffffff;
 @define-color window_bg_color $BG2;
 @define-color window_fg_color $FG;
 @define-color view_bg_color $BG;
@@ -308,8 +313,29 @@ EOF
   killall walker 2>/dev/null; swaymsg exec 'walker --gapplication-service' >/dev/null 2>&1
   swaymsg exec ~/.config/nwg-dock/dock.sh >/dev/null 2>&1
   swaync-client --reload-css >/dev/null 2>&1
-  # theme flip-flop forces running GTK apps to re-read gtk.css
+  # spotlight (resident daemon) re-reads its colors.css on SIGUSR1 — no restart
+  pkill -USR1 -f 'armoji-spotlight --daemon' 2>/dev/null
+  # already-open foot terminals: foot caches its palette at startup and has no
+  # config-reload signal (SIGUSR1 only toggles the cached dark/light theme), so
+  # push the new colors straight to every pty via OSC escapes — the pywal trick
+  _seq=$(
+    printf '\033]10;#%s\033\\' "${FG#\#}"
+    printf '\033]11;#%s\033\\' "${BG#\#}"
+    printf '\033]12;#%s\033\\' "${ACC#\#}"
+    _i=0
+    for _c in "$BG2" "$R1" "$R2" "$R3" "$R4" "$R5" "$R6" "$FG" \
+              "$MUTED" "$B1" "$B2" "$B3" "$B4" "$B5" "$B6" ffffff; do
+      printf '\033]4;%d;#%s\033\\' "$_i" "${_c#\#}"
+      _i=$((_i + 1))
+    done
+  )
+  for _pts in /dev/pts/[0-9]*; do
+    [ -w "$_pts" ] && printf '%s' "$_seq" > "$_pts" 2>/dev/null
+  done
+  # theme flip-flop forces running GTK apps to re-read gtk.css; the sleep keeps
+  # GTK from coalescing the two sets into a no-op when the end value is unchanged
   gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3' 2>/dev/null
+  sleep 0.3
   gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark' 2>/dev/null
   gsettings set org.gnome.desktop.interface icon-theme 'Papirus' 2>/dev/null
   gsettings set org.gnome.desktop.interface icon-theme 'Papirus-Dark' 2>/dev/null

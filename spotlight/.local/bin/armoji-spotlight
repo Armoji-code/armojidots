@@ -27,7 +27,7 @@
 # via the running instance, so it opens instantly. Closes on Escape, on
 # launch, or when focus leaves both windows.
 
-import gi, json, os, subprocess, sys
+import gi, json, os, signal, subprocess, sys
 from urllib.parse import quote
 gi.require_version("Gtk", "4.0")
 try:
@@ -40,6 +40,8 @@ from gi.repository import Gtk, Gdk, Gio, GLib
 APP_ID = "org.armojidots.Spotlight"   # shared app_id; windows differ by title
 CONFIG = os.path.expanduser("~/.config/armoji-spotlight")
 THEME = os.path.expanduser("~/.config/sway/scripts/theme.sh")
+WALLPAPERS = os.path.expanduser("~/Pictures/Wallpapers")
+SET_WALLPAPER = os.path.expanduser("~/.config/sway/scripts/wallpaper-pick.sh")
 WIDTH = 640
 SEARCH_H = 40                         # short bar so radius (20) = half-height = true capsule
 GAP = 12                              # desktop gap between the two windows
@@ -53,9 +55,11 @@ PALETTES = ["wallpaper", "ruby", "orange", "dandelion", "emerald",
             "cobalt", "bubblegum", "purpur", "b&w"]
 
 
-def item(text, subtext, icon, kind, value):
+def item(text, subtext, icon, kind, value, icon_px=None):
+    # icon_px lets an item override the default list icon size (e.g. wallpaper
+    # thumbnails render bigger so you can actually see them)
     return {"text": text, "subtext": subtext, "icon": icon,
-            "kind": kind, "value": value}
+            "kind": kind, "value": value, "icon_px": icon_px}
 
 
 def elephant(providers, query, limit):
@@ -100,18 +104,21 @@ def cmd_set(arg):
     sub = parts[0].lower() if parts else ""
     rest = parts[1].strip().lower() if len(parts) > 1 else ""
 
-    cats = [  # name, match-key, icon, kind, value
-        ("Colors",    "color",     "preferences-desktop-theme",   "fill", "/set color "),
-        ("Tone",      "tone",      "preferences-desktop-display", "fill", "/set tone "),
-        ("Wi-Fi",     "wifi",      "network-wireless",            "cmd",
+    cats = [  # name, match-key, icon, subtext, kind, value
+        ("Colors",    "color",     "preferences-desktop-theme",     "", "fill", "/set color "),
+        ("Tone",      "tone",      "preferences-desktop-display",   "", "fill", "/set tone "),
+        ("Wallpaper", "wallpaper", "preferences-desktop-wallpaper",
+         "~/Pictures/Wallpapers", "fill", "/set wallpaper "),
+        ("Wi-Fi",     "wifi",      "network-wireless",              "", "cmd",
          "foot --app-id=float-tui -e nmtui"),
-        ("Bluetooth", "bluetooth", "bluetooth",                   "cmd",
+        ("Bluetooth", "bluetooth", "bluetooth",                     "", "cmd",
          "foot --app-id=float-tui -e bluetuith"),
     ]
-    known = {"color", "colors", "tone", "wifi", "bluetooth", "blue"}
+    known = {"color", "colors", "tone", "wallpaper", "wall",
+             "wifi", "bluetooth", "blue"}
     if sub not in known:   # "/set" or a half-typed category → show the menu
-        return [item(name, "", icon, kind, val)
-                for name, key, icon, kind, val in cats
+        return [item(name, sub_t, icon, kind, val)
+                for name, key, icon, sub_t, kind, val in cats
                 if sub in name.lower() or sub in key]
     if sub in ("color", "colors"):
         return [item(p, "palette", "preferences-desktop-theme", "cmd",
@@ -120,11 +127,33 @@ def cmd_set(arg):
         return [item(t.capitalize(), "intensity", "preferences-desktop-display",
                      "cmd", f"{THEME} tone {t}")
                 for t in ("light", "heavy", "loud") if rest in t]
+    if sub in ("wallpaper", "wall"):
+        return wallpapers(rest)
     if sub == "wifi":
         return [item("Wi-Fi (nmtui)", "", "network-wireless", "cmd",
                      "foot --app-id=float-tui -e nmtui")]
     return [item("Bluetooth (bluetuith)", "", "bluetooth", "cmd",
                  "foot --app-id=float-tui -e bluetuith")]
+
+
+def wallpapers(filter_str):
+    # thumbnails from ~/Pictures/Wallpapers; the item icon IS the image path, so
+    # make_icon() renders a live thumbnail. Selecting one sets + persists it.
+    exts = (".jpg", ".jpeg", ".png", ".webp")
+    try:
+        files = sorted(f for f in os.listdir(WALLPAPERS)
+                       if f.lower().endswith(exts))
+    except OSError:
+        files = []
+    out = []
+    for f in files:
+        if filter_str and filter_str not in f.lower():
+            continue
+        path = os.path.join(WALLPAPERS, f)
+        out.append(item(os.path.splitext(f)[0], f, path, "cmd",
+                        f'{SET_WALLPAPER} "{path}"', icon_px=56))
+    return out or [item("No wallpapers found", WALLPAPERS,
+                        "image-missing", "noop", "")]
 
 
 def cmd_web(arg):
@@ -198,15 +227,24 @@ class Spotlight(Gtk.Application):
         self.sel = 0
         self._was_active = False
         self._closeable = False
+        self._css_providers = []
 
     # ── invocation ───────────────────────────────────────────────────
     def do_command_line(self, cmdline):
         if "--daemon" in cmdline.get_arguments():
             self.hold()
             self.ensure_windows()
+            # live theme reload: theme.sh sends SIGUSR1 after regenerating
+            # colors.css, so the resident launcher re-reads it without a restart
+            GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGUSR1,
+                                 self._on_reload)
         else:
             self.toggle()
         return 0
+
+    def _on_reload(self):
+        self.load_css()
+        return True   # keep the handler installed
 
     def ensure_windows(self):
         if self.search_win is not None:
@@ -424,7 +462,7 @@ class Spotlight(Gtk.Application):
         for it in items:
             row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
             row.add_css_class("row")
-            row.append(make_icon(it["icon"], 30))
+            row.append(make_icon(it["icon"], it.get("icon_px") or 30))
             texts = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, hexpand=True)
             texts.set_valign(Gtk.Align.CENTER)
             t = Gtk.Label(label=it["text"], xalign=0, hexpand=True)
@@ -518,6 +556,10 @@ class Spotlight(Gtk.Application):
     # ── css ──────────────────────────────────────────────────────────
     def load_css(self):
         display = Gdk.Display.get_default()
+        # drop previously-loaded providers so a reload actually swaps the colors
+        for old in self._css_providers:
+            Gtk.StyleContext.remove_provider_for_display(display, old)
+        self._css_providers = []
         for fname, prio in (("colors.css", Gtk.STYLE_PROVIDER_PRIORITY_USER),
                             ("style.css", Gtk.STYLE_PROVIDER_PRIORITY_USER + 1)):
             path = os.path.join(CONFIG, fname)
@@ -526,6 +568,7 @@ class Spotlight(Gtk.Application):
             provider = Gtk.CssProvider()
             provider.load_from_path(path)
             Gtk.StyleContext.add_provider_for_display(display, provider, prio)
+            self._css_providers.append(provider)
 
 
 if __name__ == "__main__":
