@@ -1,5 +1,7 @@
 # armojidots
 
+![screenshot](screenshot.png)
+
 My SwayFX dotfiles — built from scratch, one step at a time.
 
 > Status: **daily-drivable** — glass-pill bar, custom capsule Spotlight launcher, dynamic palette theming, wallpaper picker, sidebars, lock screen + idle, GTK theming.
