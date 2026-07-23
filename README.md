@@ -34,8 +34,10 @@ My SwayFX dotfiles — built from scratch, one step at a time.
 | `fish/` | Shell config + HI ARMOJI fastfetch greeting |
 | `fastfetch/` | Fetch config with custom ASCII logo |
 | `starship/` | Prompt |
-| `gtk/` | GTK 3/4 settings (adw-gtk3-dark + Papirus) |
+| `gtk/` | GTK 3/4 settings (adw-gtk3-dark) |
+| `cursor/` | Xcursor default → Bibata-Modern-Classic |
 | `icons/` | Custom dock icons for the sidebar terminals (foot + Claude) |
+| `assets/` | Slot-Multicolor-Dark-Icons (not packaged anywhere — bundled + installed by script) |
 
 ## Setup
 
@@ -51,14 +53,16 @@ sudo pacman -S wlroots0.20 foot stow waybar brightnessctl pavucontrol swaybg \
        python-gobject gtk4 gtk4-layer-shell playerctl wireplumber
 # swayfx-git (0.6+) for window animations — the tagged 0.5.3 has none
 yay -S swayfx-git swaysome walker-bin swaylock-effects nwg-dock elephant-desktopapplications \
-       elephant-calc elephant-runner elephant-websearch elephant-menus bluetuith-bin
+       elephant-calc elephant-runner elephant-websearch elephant-menus bluetuith-bin \
+       bibata-cursor-theme
 git clone https://github.com/Armoji-code/armojidots.git ~/dotfiles
 cd ~/dotfiles
 stow sway waybar spotlight dock osd systemd walker nwg-dock foot swaync swaylock \
-     swayidle fish fastfetch starship gtk icons
+     swayidle fish fastfetch starship gtk cursor icons
 elephant service enable
 systemctl --user enable --now armoji-spotlight.service armoji-dock.service armoji-osd.service
 mkdir -p ~/Pictures/Wallpapers   # drop wallpapers here for /set wallpaper
+./assets/install-icon-theme.sh  # extracts Slot-Multicolor-Dark-Icons to ~/.local/share/icons
 ```
 
 Configs are symlinked into `~/.config` by [GNU Stow](https://www.gnu.org/software/stow/) — editing the live config edits the repo.
@@ -134,11 +138,20 @@ wallpaper — default, follows wallpaper changes), ruby, orange, dandelion,
 emerald, cobalt, bubblegum, purpur, b&w. One seed color derives a six-role
 family (accent, dim, bg, surface, fg, muted) which `scripts/theme.sh`
 writes into waybar, foot (including the full terminal ANSI palette), sway
-borders, walker, swaync, GTK 3/4 apps (full window tinting + accent), and
-Papirus folder icons (hue-matched recolor) — everything flips at once.
-`/set tone` (light / heavy / loud) is a master intensity dial for how hard
-the palette sits on all of it. GTK windows (Nemo, pavucontrol) also get
-slight transparency + SwayFX blur to match the glass look.
+borders, walker, swaync, GTK 3/4 apps (full window tinting + accent) —
+everything flips at once. `/set tone` (light / heavy / loud) is a master
+intensity dial for how hard the palette sits on all of it. GTK windows
+(Nemo, pavucontrol) also get slight transparency + SwayFX blur to match
+the glass look.
+
+**Icons:** [Slot-Multicolor-Dark-Icons](assets/) system-wide (GTK, waybar
+tray, and both custom apps — they all resolve icon *names*, not app_ids
+directly, via each window's `.desktop` file). Only the truly generic
+folder icon gets hue-matched to the accent on every palette change —
+Documents/Downloads/Music/Pictures/Videos/Desktop/etc. and anything with
+its own branded icon (git, docker, steam, …) keep their own distinct
+look on purpose, so folders stay visually identifiable. **Cursor:**
+Bibata-Modern-Classic, set system-wide (GTK, Xcursor, the sway seat).
 
 ## Dock
 

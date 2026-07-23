@@ -242,35 +242,62 @@ EOF
   done
 
 
-  # ── Papirus folder color (user-copy theme, no sudo) ──
-  papirus_color=$(python3 - "$ACC" <<'PYEOF'
+  # ── Slot-Multicolor-Dark-Icons: selective folder recolor ──
+  # Only the "default" XDG folders (Documents, Downloads, Music, Pictures,
+  # Videos, Desktop, Public, Templates, home/root, and the bare "folder"
+  # icon) get tinted to the accent — every folder with its own branded icon
+  # (git, docker, steam, blender, …) keeps the pack's original artwork, so
+  # those stay visually distinct on purpose.
+  #
+  # This is hand-rolled (not papirus-folders): that tool hardcodes a
+  # "<size>x<size>/places" layout, but this pack uses "places/<size>" —
+  # a different (still spec-valid) convention it can't find files under.
+  SLOT_DIR="$HOME/.local/share/icons/Slot-Multicolor-Dark-Icons"
+  slot_color=$(python3 - "$ACC" <<'PYEOF'
 import sys, colorsys
 r, g, b = (int(sys.argv[1][i:i+2], 16) / 255 for i in (1, 3, 5))
 h, s, v = colorsys.rgb_to_hsv(r, g, b)
 deg = h * 360
+# Slot's palette has 11 colors (no teal/pink) — nearest-neighbor those in
 if s < 0.10:
     print("grey")
 elif deg < 15 or deg >= 345:
     print("red")
 elif deg < 40:
     print("orange")
-elif deg < 70:
+elif deg < 65:
     print("yellow")
-elif deg < 160:
+elif deg < 170:
     print("green")
-elif deg < 200:
-    print("teal")
-elif deg < 250:
+elif deg < 220:
+    print("cyan")      # teal → cyan
+elif deg < 260:
     print("blue")
-elif deg < 290:
+elif deg < 300:
     print("violet")
-elif deg < 330:
-    print("pink")
 else:
-    print("magenta")
+    print("magenta")   # pink → magenta
 PYEOF
 )
-  papirus-folders -C "$papirus_color" --theme Papirus-Dark >/dev/null 2>&1
+  if [ -d "$SLOT_DIR" ]; then
+    # Documents/Downloads/Music/Pictures/Videos/Templates/Public/Desktop/
+    # Home/Root all ship their OWN distinct built-in art in this pack (same
+    # idea as git/docker/steam) — only the bare "folder" (used for any
+    # custom-named folder with no special icon, e.g. a random project dir)
+    # gets tinted to the accent.
+    generic_folders="folder folder-open"
+    for size_dir in "$SLOT_DIR"/places/*/; do
+      target="${size_dir}folder-$slot_color.svg"
+      [ -f "$target" ] || continue
+      for fname in $generic_folders; do
+        dest="${size_dir}${fname}.svg"
+        # only relink names the pack actually ships at this size
+        { [ -f "$dest" ] || [ -L "$dest" ]; } || continue
+        ln -sf "folder-$slot_color.svg" "$dest"
+      done
+    done
+    gtk-update-icon-cache -qf "$SLOT_DIR" >/dev/null 2>&1
+  fi
 
   # ── swaylock (whole config is generated; edit here, not there) ──
   # needs swaylock-effects for clock + blur/vignette
@@ -352,8 +379,10 @@ EOF
   gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3' 2>/dev/null
   sleep 0.3
   gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark' 2>/dev/null
-  gsettings set org.gnome.desktop.interface icon-theme 'Papirus' 2>/dev/null
-  gsettings set org.gnome.desktop.interface icon-theme 'Papirus-Dark' 2>/dev/null
+  # toggle through a dummy value first so apps that only react to a change
+  # event actually refresh, then land on Slot-Multicolor-Dark-Icons
+  gsettings set org.gnome.desktop.interface icon-theme 'Adwaita' 2>/dev/null
+  gsettings set org.gnome.desktop.interface icon-theme 'Slot-Multicolor-Dark-Icons' 2>/dev/null
   notify-send -t 3000 "󰏘 Theme" "palette: $name ($ACC)"
 }
 

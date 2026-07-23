@@ -43,22 +43,63 @@ def get_tree():
 
 
 def windows():
-    """Every open toplevel window: (con_id, app_id, title), in tree order."""
+    """Every open toplevel window: (con_id, app_id, title, workspace), in
+    tree order. workspace is the raw sway workspace name (e.g. "11", "21",
+    or "__i3_scratch" for scratchpad-parked sidebars)."""
     out = []
 
-    def walk(n):
+    def walk(n, ws=None):
+        if n.get("type") == "workspace":
+            ws = n.get("name")
         aid = n.get("app_id")
         wp = n.get("window_properties") or {}
         is_leaf = not (n.get("nodes") or n.get("floating_nodes"))
         name = aid or wp.get("class")
         if (name and n.get("type") in ("con", "floating_con") and is_leaf
                 and not name.startswith("org.armojidots")):
-            out.append((n["id"], name, n.get("name") or ""))
+            out.append((n["id"], name, n.get("name") or "", ws))
         for c in n.get("nodes", []) + n.get("floating_nodes", []):
-            walk(c)
+            walk(c, ws)
 
     walk(get_tree())
     return out
+
+
+_desktop_icon_map = None
+
+
+def _build_desktop_icon_map():
+    """app_id/WM_CLASS (lowercased) -> real icon name, via installed .desktop
+    files. A window's app_id often ISN'T its icon name (Zen Browser's app_id
+    is "zen", but its icon is "zen-browser"; Thunar's is "org.xfce.thunar")
+    — StartupWMClass in the .desktop file is the authoritative link, same
+    resolution elephant does for Spotlight (which is why that gets these
+    right already)."""
+    m = {}
+    for app in Gio.AppInfo.get_all():
+        if not isinstance(app, Gio.DesktopAppInfo):
+            continue
+        icon = app.get_icon()
+        names = icon.get_names() if icon and hasattr(icon, "get_names") else None
+        icon_name = names[0] if names else (icon.to_string() if icon else None)
+        if not icon_name:
+            continue
+        wmclass = app.get_startup_wm_class()
+        if wmclass:
+            m[wmclass.lower()] = icon_name
+        did = app.get_id() or ""
+        if did.endswith(".desktop"):
+            did = did[:-len(".desktop")]
+        if did:
+            m[did.lower()] = icon_name
+    return m
+
+
+def resolve_icon_name(app_id):
+    global _desktop_icon_map
+    if _desktop_icon_map is None:
+        _desktop_icon_map = _build_desktop_icon_map()
+    return _desktop_icon_map.get((app_id or "").lower())
 
 
 def make_icon(name, px):
@@ -183,14 +224,45 @@ class Dock(Gtk.Application):
     def rebuild(self):
         self.clear(self.pill)
 
-        # running apps
-        for con_id, app_id, title in windows():
+        # group by workspace, each into its own sub-pill (empty ws = no pill);
+        # sidebars (scratchpad-parked, app_id starts "sidebar-") go in their
+        # own pill on the right, regardless of which workspace they're
+        # currently shown on, split off by a divider
+        by_ws = {}
+        sidebar = []
+        for con_id, app_id, title, ws in windows():
+            if app_id.startswith("sidebar-"):
+                sidebar.append((con_id, app_id, title))
+            else:
+                by_ws.setdefault(ws, []).append((con_id, app_id, title))
+
+        def numeric_ws(ws):
+            try:
+                return (0, int(ws))
+            except (TypeError, ValueError):
+                return (1, 0)   # non-numeric (e.g. scratchpad) sorts last
+
+        for ws in sorted(by_ws, key=numeric_ws):
+            self.pill.append(self._ws_pill(by_ws[ws]))
+
+        if sidebar:
+            sep = Gtk.Separator(orientation=Gtk.Orientation.VERTICAL)
+            sep.add_css_class("sep")
+            self.pill.append(sep)
+            self.pill.append(self._ws_pill(sidebar))
+
+    def _ws_pill(self, apps):
+        box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
+        box.add_css_class("ws-pill")
+        for con_id, app_id, title in apps:
+            icon_name = resolve_icon_name(app_id) or app_id
             b = Gtk.Button()
             b.add_css_class("app")
-            b.set_child(make_icon(app_id, ICON))
+            b.set_child(make_icon(icon_name, ICON))
             b.set_tooltip_text(title or app_id)
             b.connect("clicked", self.on_app, con_id)
-            self.pill.append(b)
+            box.append(b)
+        return box
 
     def on_launcher(self, *_):
         self.hide()

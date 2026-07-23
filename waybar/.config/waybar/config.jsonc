@@ -112,7 +112,7 @@
     "format": "{icon} {volume}%",
     "format-muted": "󰝟 mute",
     "format-icons": { "default": ["󰕿", "󰖀", "󰕾"] },
-    "on-click": "pavucontrol",
+    "on-click": "foot --app-id=float-tui -e pulsemixer",
     "tooltip": false
   },
 
