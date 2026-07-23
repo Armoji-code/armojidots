@@ -9,6 +9,13 @@ My SwayFX dotfiles — built from scratch, one step at a time.
 > volume/brightness OSD, dynamic palette theming, wallpaper picker, sidebars,
 > lock screen + idle, GTK theming.
 
+> [!WARNING]
+> This is mostly **vibecoded** and tailored specifically to my own machine,
+> workflow, and taste — it's **not meant to be used as-is by other people**.
+> Feel free to dig through it for ideas or steal a piece (Spotlight, the
+> dock, the OSD, etc.) for your own setup, but don't expect it to work by
+> just cloning and stowing on a different system.
+
 ## What's here
 
 | Package | What it configures |
