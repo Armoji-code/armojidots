@@ -97,6 +97,20 @@ def cmd_power(arg):
     return [item(t, "", ic, "cmd", ex) for t, ic, ex in opts if a in t.lower()]
 
 
+def cmd_update(arg):
+    opts = [
+        ("Full System Update", "system-software-update",
+         "foot --app-id=float-tui -e yay -Syu"),
+        ("Pacman", "system-software-update",
+         "foot --app-id=float-tui -e sudo pacman -Syu"),
+        ("AUR (yay)", "system-software-update",
+         "foot --app-id=float-tui -e yay -Sua"),
+        ("Kernel", "org.cachyos.KernelManager", "cachyos-kernel-manager"),
+    ]
+    a = arg.strip().lower()
+    return [item(t, "", ic, "cmd", ex) for t, ic, ex in opts if a in t.lower()]
+
+
 def cmd_set(arg):
     # two-level: "/set" shows categories; Colors/Tone drill down (fill), while
     # Wi-Fi/Bluetooth run straight away.
@@ -113,9 +127,11 @@ def cmd_set(arg):
          "foot --app-id=float-tui -e nmtui"),
         ("Bluetooth", "bluetooth", "bluetooth",                     "", "cmd",
          "foot --app-id=float-tui -e bluetuith"),
+        ("Monitors",  "monitors",  "video-display",                 "", "cmd",
+         "~/.config/sway/scripts/monitors.sh"),
     ]
     known = {"color", "colors", "tone", "wallpaper", "wall",
-             "wifi", "bluetooth", "blue"}
+             "wifi", "bluetooth", "blue", "monitors", "monitor", "displays"}
     if sub not in known:   # "/set" or a half-typed category → show the menu
         return [item(name, sub_t, icon, kind, val)
                 for name, key, icon, sub_t, kind, val in cats
@@ -132,6 +148,9 @@ def cmd_set(arg):
     if sub == "wifi":
         return [item("Wi-Fi (nmtui)", "", "network-wireless", "cmd",
                      "foot --app-id=float-tui -e nmtui")]
+    if sub in ("monitors", "monitor", "displays"):
+        return [item("Monitors (nwg-displays)", "", "video-display", "cmd",
+                     "~/.config/sway/scripts/monitors.sh")]
     return [item("Bluetooth (bluetuith)", "", "bluetooth", "cmd",
                  "foot --app-id=float-tui -e bluetuith")]
 
@@ -198,7 +217,7 @@ def cmd_keys(arg):
 
 
 COMMANDS = {"/power": cmd_power, "/set": cmd_set,
-            "/web": cmd_web, "/keys": cmd_keys}
+            "/web": cmd_web, "/keys": cmd_keys, "/update": cmd_update}
 
 
 def make_icon(name, px):
@@ -514,10 +533,27 @@ class Spotlight(Gtk.Application):
         if kind == "calc":
             subprocess.run(["wl-copy", val])
         elif kind == "cmd":
-            subprocess.Popen(["/bin/sh", "-c", val], start_new_session=True)
+            self._spawn(["/bin/sh", "-c", val])
         else:
-            subprocess.Popen(["gtk-launch", val], start_new_session=True)
+            self._spawn(["gtk-launch", val])
         self.hide()
+
+    def _spawn(self, argv):
+        # Popen'd children of this long-running daemon become zombies once
+        # they exit unless something reaps them — GLib's child watch does
+        # that (and a zombie still matches e.g. `pgrep`, which broke the
+        # "already running?" check other scripts use to avoid duplicates).
+        #
+        # Our own LD_PRELOAD (gtk4-layer-shell, set by the systemd unit so
+        # THIS process can be a true-capsule layer surface) is inherited by
+        # every child otherwise — and hard-crashes any GTK3 app it hooks
+        # into GTK-init-order-wise (confirmed: nwg-displays segfaults with
+        # "gdk_display_manager_get() was called before gtk_init()"). Children
+        # don't need it, so strip it.
+        env = os.environ.copy()
+        env.pop("LD_PRELOAD", None)
+        proc = subprocess.Popen(argv, start_new_session=True, env=env)
+        GLib.child_watch_add(proc.pid, lambda pid, status: None)
 
     # ── search / commands ────────────────────────────────────────────
     def on_changed(self, entry):
