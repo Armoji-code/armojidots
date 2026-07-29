@@ -68,7 +68,7 @@
   },
 
   "modules-center": ["sway/workspaces"],
-  "modules-right": ["tray", "bluetooth", "network", "pulseaudio", "backlight", "battery", "custom/power", "idle_inhibitor", "custom/bluelight", "custom/notifications"],
+  "modules-right": ["tray", "bluetooth", "network", "custom/language", "pulseaudio", "backlight", "battery", "custom/power", "idle_inhibitor", "custom/bluelight", "custom/notifications"],
 
   // swaysome names workspaces 11..110 (monitor 1), 21..210 (monitor 2);
   // format-icons displays them as 1..10 per monitor
@@ -109,6 +109,15 @@
     "on-click": "foot --app-id=float-tui -e nmtui",
     "tooltip-format-wifi": "{essid} ({signalStrength}%)\n{ipaddr}",
     "tooltip-format-ethernet": "{ifname}\n{ipaddr}"
+  },
+
+  // keyboard layout: EN/LT. Shift+Alt toggles (input.conf's xkb grp chord)
+  // or click this; either way fires a switch notification (lang.sh)
+  "custom/language": {
+    "exec": "~/.config/waybar/scripts/lang.sh watch",
+    "return-type": "json",
+    "on-click": "~/.config/waybar/scripts/lang.sh toggle",
+    "tooltip": true
   },
 
   "pulseaudio": {
