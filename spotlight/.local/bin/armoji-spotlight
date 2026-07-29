@@ -1,22 +1,25 @@
 #!/usr/bin/env python3
 # ── armojidots · Spotlight ──────────────────────────────────────────
-# A custom launcher built as TWO coordinated windows:
+# A custom launcher built as TWO coordinated LAYER-SHELL surfaces (namespaces
+# "spotlight-search" and "spotlight-list"):
 #
-#   • search window  — a LAYER-SHELL surface (namespace "spotlight-search").
-#     A normal window's corner_radius is clamped by SwayFX to ~0.36×height,
-#     so it can't be a true capsule; a layer surface can, because
-#     `layer_effects … blur_ignore_transparent` clips the blur to the
-#     opaque pixels — i.e. the CSS-drawn capsule (border-radius = half its
-#     height). Holds the entry + keyboard focus (ON_DEMAND). Placed by
-#     anchors + margins, not by `swaymsg move`.
-#   • list window    — a NORMAL floating window (keeps SwayFX's open/close
-#     animation), anchored directly below the search bar via `swaymsg move`
-#     and growing DOWNWARD as results change. Filled edge-to-edge by one
-#     translucent pill so its corner_radius (10) clips its blur cleanly.
+#   • search window  — the capsule. A normal window's corner_radius is
+#     clamped by SwayFX to ~0.36×height, so it can't be a true capsule; a
+#     layer surface can, because `layer_effects … blur_ignore_transparent`
+#     clips the blur to the opaque pixels — i.e. the CSS-drawn capsule
+#     (border-radius = half its height). Holds the entry + keyboard focus
+#     (KeyboardMode.EXCLUSIVE — see below).
+#   • list window    — the content panel, anchored directly below the search
+#     bar and growing DOWNWARD as results change. KeyboardMode.NONE (mouse
+#     only). Being layer-shell too means no SwayFX open/close pop animation
+#     here (layer surfaces don't get it in this build) — traded away on
+#     purpose for a crisp blur-clipped edge and one consistent surface type
+#     across both pieces, rather than mixing a layer surface with a window.
 #
-# The gap between the two windows is real desktop, so it stays crisp. If the
-# gtk4-layer-shell binding is missing, the search window falls back to a
-# normal floating window (rounded rectangle, no true capsule).
+# Both are placed by anchors + margins, not `swaymsg move`. The gap between
+# them is real desktop, so it stays crisp. If the gtk4-layer-shell binding is
+# missing, both fall back to normal floating windows placed via `swaymsg
+# move` (rounded rectangles, no true capsule, but still functional).
 #
 # Elephant is the search/data backend (fuzzy apps + usage ranking + calc);
 # we own the UI, so every mode gets its own layout — a grid when empty, a
@@ -281,10 +284,10 @@ class Spotlight(Gtk.Application):
             LayerShell.init_for_window(self.search_win)
             LayerShell.set_namespace(self.search_win, "spotlight-search")
             LayerShell.set_layer(self.search_win, LayerShell.Layer.OVERLAY)
-            # EXCLUSIVE: with a normal list window also mapped, ON_DEMAND can't
-            # pull keyboard focus onto the layer surface, so typing/arrows/Esc
-            # (all on this window's key controller) would go to the list window
-            # instead. EXCLUSIVE forces the seat's keyboard onto the search bar.
+            # EXCLUSIVE: the list window is KeyboardMode.NONE, but with two
+            # layer surfaces mapped, ON_DEMAND still can't reliably pull
+            # keyboard focus onto this one — typing/arrows/Esc would silently
+            # go nowhere. EXCLUSIVE forces the seat's keyboard onto the search bar.
             LayerShell.set_keyboard_mode(self.search_win,
                                          LayerShell.KeyboardMode.EXCLUSIVE)
             # anchor top-left; margins in position() do the actual placement.
@@ -320,6 +323,14 @@ class Spotlight(Gtk.Application):
         self.list_win.set_resizable(False)
         self.list_win.add_css_class("spotlight")
         self.list_win.set_hide_on_close(True)
+        if LayerShell is not None:
+            LayerShell.init_for_window(self.list_win)
+            LayerShell.set_namespace(self.list_win, "spotlight-list")
+            LayerShell.set_layer(self.list_win, LayerShell.Layer.OVERLAY)
+            LayerShell.set_keyboard_mode(self.list_win, LayerShell.KeyboardMode.NONE)
+            LayerShell.set_anchor(self.list_win, LayerShell.Edge.TOP, True)
+            LayerShell.set_anchor(self.list_win, LayerShell.Edge.LEFT, True)
+            LayerShell.set_exclusive_zone(self.list_win, -1)
         self.list_win.connect("notify::is-active", self.on_active)
 
         content_pill = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
@@ -390,21 +401,23 @@ class Spotlight(Gtk.Application):
         r = o["rect"]
         mx = (r["width"] - WIDTH) // 2          # centered horizontally
         my = int(r["height"] * TOP_FRAC)        # anchored this far down
-        x = r["x"] + mx
-        ly = r["y"] + my + SEARCH_H + GAP
-        # search bar: layer-shell surface placed by anchors + margins
+        ly = my + SEARCH_H + GAP                # list: directly below the search bar
+        # both are layer-shell surfaces placed by anchors + margins
         if LayerShell is not None:
             mon = self._gdk_monitor(o.get("name"))
             if mon is not None:
                 LayerShell.set_monitor(self.search_win, mon)
+                LayerShell.set_monitor(self.list_win, mon)
             LayerShell.set_margin(self.search_win, LayerShell.Edge.LEFT, mx)
             LayerShell.set_margin(self.search_win, LayerShell.Edge.TOP, my)
+            LayerShell.set_margin(self.list_win, LayerShell.Edge.LEFT, mx)
+            LayerShell.set_margin(self.list_win, LayerShell.Edge.TOP, ly)
         else:
+            x = r["x"] + mx
             swaymsg(f'[app_id="{APP_ID}" title="spotlight-search"] '
                     f'move absolute position {x} {r["y"] + my}')
-        # list: normal window, moved directly below the search bar
-        swaymsg(f'[app_id="{APP_ID}" title="spotlight-list"] '
-                f'move absolute position {x} {ly}')
+            swaymsg(f'[app_id="{APP_ID}" title="spotlight-list"] '
+                    f'move absolute position {x} {r["y"] + ly}')
         self.focus_search()
         return False    # one-shot
 
@@ -420,8 +433,8 @@ class Spotlight(Gtk.Application):
 
     def focus_search(self):
         # a layer surface isn't addressable by swaymsg title; re-present it so
-        # gtk4-layer-shell requests keyboard focus (ON_DEMAND) away from the
-        # normal list window, then focus the entry widget inside it
+        # gtk4-layer-shell requests keyboard focus (EXCLUSIVE) onto it, then
+        # focus the entry widget inside it
         if LayerShell is None:
             swaymsg(f'[app_id="{APP_ID}" title="spotlight-search"] focus')
         else:

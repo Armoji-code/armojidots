@@ -1,13 +1,18 @@
 #!/bin/sh
-# Waybar media modules driven by playerctl --follow (live updates, no polling).
+# Waybar media modules driven by playerctl, targeting a SELECTED player so
+# multiple simultaneous players (e.g. Spotify + a browser tab) don't fight
+# over which one's shown — click the cover art to cycle between them.
+#   cover      → writes a circle-cropped cover-art PNG for the image#cover
+#                module (waybar's "image" module just polls a file path)
 #   cava       → block-char visualizer (waybar's native cava produces nothing)
 #   playpause  → JSON: play/pause icon reflecting player status
 #   info       → JSON: "Title\n<small>Artist</small>" (pango, escaped)
-#   cover      → writes a circle-cropped cover-art PNG for the image#cover
-#                module (waybar's "image" module just polls a file path)
+#   cycle      → advance the selected player (bound to cover art on-click)
+#   play-pause / prev / next → act on the selected player specifically
 
 CACHE="$HOME/.cache/armoji-waybar"
 COVER="$CACHE/cover.png"
+SEL="$CACHE/selected-player"
 mkdir -p "$CACHE"
 
 # waybar orphans an exec's pipeline children on reload/restart; kill our own
@@ -22,16 +27,71 @@ emit_pp() {
   esac
 }
 
+players() { playerctl -l 2>/dev/null; }
+
+# generic cover for tracks with no (or unfetchable) artUrl — a filled circle
+# in the current theme's colors so the click target always looks the same
+placeholder_cover() {
+  css="$HOME/.config/waybar/colors.css"
+  accent=$(grep -m1 '@define-color accent ' "$css" 2>/dev/null | awk '{print $3}' | tr -d ';')
+  dim=$(grep -m1 '@define-color accent-dim ' "$css" 2>/dev/null | awk '{print $3}' | tr -d ';')
+  [ -z "$accent" ] && accent="#537ff2"
+  [ -z "$dim" ] && dim="#3957a4"
+  python3 -c '
+import sys
+from PIL import Image, ImageDraw, ImageFont
+out, dim_hex, accent_hex = sys.argv[1], sys.argv[2], sys.argv[3]
+size = 22 * 3
+im = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+d = ImageDraw.Draw(im)
+d.ellipse((0, 0, size, size), fill=dim_hex)
+font = ImageFont.truetype("/usr/share/fonts/TTF/JetBrainsMonoNerdFont-Regular.ttf", int(size * 0.5))
+glyph = "\uf001"  # nf-fa-music
+bbox = d.textbbox((0, 0), glyph, font=font)
+gw, gh = bbox[2] - bbox[0], bbox[3] - bbox[1]
+d.text(((size - gw) / 2 - bbox[0], (size - gh) / 2 - bbox[1]), glyph, font=font, fill=accent_hex)
+im.save(out)
+' "$COVER" "$dim" "$accent" 2>/dev/null
+}
+
+# the user-picked player if it's still active, else playerctl's own default
+# (most-recently-active) pick — so things work with zero clicks too
+current_player() {
+  sel=$(cat "$SEL" 2>/dev/null)
+  list=$(players)
+  if [ -n "$sel" ] && printf '%s\n' "$list" | grep -qx "$sel"; then
+    printf '%s' "$sel"
+  else
+    printf '%s\n' "$list" | head -n1
+  fi
+}
+
 case "$1" in
+  cycle)
+    list=$(players)
+    n=$(printf '%s\n' "$list" | grep -c .)
+    [ "$n" -le 1 ] && exit 0
+    cur=$(current_player)
+    printf '%s\n' "$list" | awk -v cur="$cur" '
+      { a[NR]=$0; if ($0==cur) idx=NR }
+      END { print (idx=="") ? a[1] : a[(idx % NR) + 1] }
+    ' > "$SEL"
+    ;;
+  play-pause) playerctl -p "$(current_player)" play-pause 2>/dev/null ;;
+  prev)       playerctl -p "$(current_player)" previous 2>/dev/null ;;
+  next)       playerctl -p "$(current_player)" next 2>/dev/null ;;
+
   cover)
-    # resolve artUrl → circle-cropped PNG at $COVER, re-run on every track change
+    # resolve artUrl → circle-cropped PNG at $COVER, re-check every second
+    # (also picks up player-selection changes from `cycle`)
     last=""
     while :; do
-      url=$(playerctl metadata mpris:artUrl 2>/dev/null)
-      if [ "$url" != "$last" ]; then
-        last="$url"
+      p=$(current_player)
+      url=$(playerctl -p "$p" metadata mpris:artUrl 2>/dev/null)
+      if [ "$url|$p" != "$last" ]; then
+        last="$url|$p"
         if [ -z "$url" ]; then
-          rm -f "$COVER"
+          placeholder_cover
         else
           src="$url"
           case "$url" in
@@ -52,10 +112,10 @@ mask = Image.new("L", (size, size), 0)
 ImageDraw.Draw(mask).ellipse((0, 0, size, size), fill=255)
 im.putalpha(mask)
 im.save(out)
-' "$src" "$COVER" 2>/dev/null || rm -f "$COVER"
+' "$src" "$COVER" 2>/dev/null || placeholder_cover
         fi
       fi
-      sleep 2
+      sleep 1
     done
     ;;
   cava)
@@ -73,24 +133,37 @@ for line in sys.stdin:
     rm -f "$cfg"
     ;;
   playpause)
-    emit_pp "$(playerctl status 2>/dev/null)"
-    playerctl --follow --format '{{status}}' status 2>/dev/null |
-      while IFS= read -r s; do emit_pp "$s"; done
+    last=""
+    while :; do
+      p=$(current_player)
+      s=$(playerctl -p "$p" status 2>/dev/null)
+      if [ "$s|$p" != "$last" ]; then
+        last="$s|$p"
+        emit_pp "$s"
+      fi
+      sleep 1
+    done
     ;;
   info)
-    # print an initial value, then stream changes
-    { playerctl metadata --format '{{title}}||{{artist}}' 2>/dev/null
-      playerctl --follow --format '{{title}}||{{artist}}' metadata 2>/dev/null; } |
-      python3 -u -c '
+    last=""
+    while :; do
+      p=$(current_player)
+      line=$(playerctl -p "$p" metadata --format '{{title}}||{{artist}}' 2>/dev/null)
+      if [ "$line|$p" != "$last" ]; then
+        last="$line|$p"
+        printf '%s\n' "$line" | python3 -c '
 import sys, json, html
-for line in sys.stdin:
-    title, _, artist = line.rstrip("\n").partition("||")
-    if not title:
-        print(json.dumps({"text": ""}), flush=True); continue
-    t, a = html.escape(title), html.escape(artist)
-    text = f"{t}\n<small>{a}</small>" if artist else t
-    tip = f"{title} — {artist}" if artist else title
-    print(json.dumps({"text": text, "tooltip": tip}), flush=True)
+line = sys.stdin.readline().rstrip("\n")
+title, _, artist = line.partition("||")
+if not title:
+    print(json.dumps({"text": ""})); sys.exit()
+t, a = html.escape(title), html.escape(artist)
+text = f"{t}\n<small>{a}</small>" if artist else t
+tip = f"{title} — {artist}" if artist else title
+print(json.dumps({"text": text, "tooltip": tip}))
 '
+      fi
+      sleep 1
+    done
     ;;
 esac

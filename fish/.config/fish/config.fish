@@ -50,4 +50,4 @@ end
 test -s ~/.config/envman/load.fish; and source ~/.config/envman/load.fish
 export PATH="$PATH:$HOME/go/bin"
 export PATH="$PATH:$HOME/go/bin"
-set -gx OLLAMA_HOST http://192.168.0.194:11434
+set -gx OLLAMA_HOST http://localhost:11434

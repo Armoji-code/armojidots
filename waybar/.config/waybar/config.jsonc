@@ -26,11 +26,14 @@
     "tooltip": false
   },
 
-  // waybar's image module just polls the path this fetcher keeps updated
+  // waybar's image module just polls the path this fetcher keeps updated.
+  // Click cycles which player (if more than one is active) everything else
+  // in the pill is showing.
   "image#cover": {
     "path": "/home/armin/.cache/armoji-waybar/cover.png",
     "size": 22,
-    "interval": 2
+    "interval": 2,
+    "on-click": "~/.config/waybar/scripts/media.sh cycle"
   },
 
   "custom/cava": {
@@ -40,20 +43,20 @@
 
   "custom/media-prev": {
     "format": "󰒮",
-    "on-click": "playerctl previous",
+    "on-click": "~/.config/waybar/scripts/media.sh prev",
     "tooltip": false
   },
 
   "custom/media-playpause": {
     "exec": "~/.config/waybar/scripts/media.sh playpause",
     "return-type": "json",
-    "on-click": "playerctl play-pause",
+    "on-click": "~/.config/waybar/scripts/media.sh play-pause",
     "tooltip": false
   },
 
   "custom/media-next": {
     "format": "󰒭",
-    "on-click": "playerctl next",
+    "on-click": "~/.config/waybar/scripts/media.sh next",
     "tooltip": false
   },
 
@@ -61,11 +64,11 @@
     "exec": "~/.config/waybar/scripts/media.sh info",
     "return-type": "json",
     "escape": false,
-    "on-click": "playerctl play-pause"
+    "on-click": "~/.config/waybar/scripts/media.sh play-pause"
   },
 
   "modules-center": ["sway/workspaces"],
-  "modules-right": ["tray", "bluetooth", "network", "pulseaudio", "backlight", "battery", "custom/power", "idle_inhibitor", "custom/notifications"],
+  "modules-right": ["tray", "bluetooth", "network", "pulseaudio", "backlight", "battery", "custom/power", "idle_inhibitor", "custom/bluelight", "custom/notifications"],
 
   // swaysome names workspaces 11..110 (monitor 1), 21..210 (monitor 2);
   // format-icons displays them as 1..10 per monitor
@@ -140,6 +143,15 @@
     "start-activated": true,
     "tooltip-format-activated": "auto-lock: OFF (click to arm)",
     "tooltip-format-deactivated": "auto-lock: ON (5m lock, 10m screen off)"
+  },
+
+  // blue-light filter (wlsunset): click cycles ON -> OFF -> AUTO (21:00-05:00)
+  "custom/bluelight": {
+    "exec": "~/.config/waybar/scripts/bluelight.sh status",
+    "return-type": "json",
+    "interval": "once",
+    "signal": 9,
+    "on-click": "~/.config/waybar/scripts/bluelight.sh toggle"
   },
 
   // bell: notification count + control center on click (swaync)
