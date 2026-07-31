@@ -1,8 +1,13 @@
 #!/bin/sh
 # Sidebar terminal geometry: position (which edge) + size (3 stages).
-#   sidebar-control.sh apply <name>                 re-apply saved geometry
-#   sidebar-control.sh position <l|r|top|bottom>     set + apply, on last-shown sidebar
-#   sidebar-control.sh resize <up|down|left|right>   grow/shrink + apply, on last-shown
+# All keybinds are vim-style toggles (Win+Arrow / Win+Shift+Arrow are
+# confirmed to never reach sway on this hardware — pinned, unfixed):
+#   sidebar-control.sh apply <name>            re-apply saved geometry
+#   sidebar-control.sh position <l|r|top|bottom>  set an exact position directly
+#   sidebar-control.sh toggle-sides   left<->right, or top<->bottom — whichever
+#                                      axis it's currently docked on
+#   sidebar-control.sh toggle-mode    sides (left/right) <-> middle (top/bottom)
+#   sidebar-control.sh toggle-size    cycle default -> half -> full -> default
 #
 # Position: which edge it docks to — left/right keep it vertical (full
 # height); top/bottom flip it horizontal (a slim, centered 90-cell-wide
@@ -10,10 +15,6 @@
 # Size: 3 stages on the "thickness" axis (width for left/right, height for
 # top/bottom) — default (25%) -> half (50%) -> full (100% of the true safe
 # max for that axis, so "full" always means the actual biggest it can go).
-# Resize direction is POSITION-RELATIVE: whichever arrow points toward the
-# screen center grows it (right for left-docked, left for right-docked,
-# down for top-docked, up for bottom-docked) — matches the physical
-# direction the panel visibly grows in.
 #
 # State is kept per-sidebar (term vs claude). Which sidebar these keybinds
 # act on is the LAST ONE SHOWN (scripts/sidebar.sh records this on every
@@ -38,6 +39,19 @@ last_sidebar() {
   cat "$STATE_DIR/last-sidebar" 2>/dev/null
 }
 
+# exits (no-op) if there's no last-shown sidebar; otherwise prints its name
+require_sidebar() {
+  name=$(last_sidebar)
+  case "$name" in
+    sidebar-*) printf '%s' "$name" ;;
+    *) exit 0 ;;
+  esac
+}
+
+current_pos() {
+  cat "$STATE_DIR/${1}.pos" 2>/dev/null || echo left
+}
+
 apply() {
   name="$1"
   pos=$(cat "$STATE_DIR/${name}.pos" 2>/dev/null || echo left)
@@ -60,10 +74,11 @@ for o in json.load(sys.stdin):
     left|right) safe_max=$((ow - GAP * 2)) ;;              # width axis
     top|bottom) safe_max=$((oh - OY - GAP)) ;;              # height axis (bar clearance eats into it)
   esac
-  case "$stage" in
-    default) thick=$((safe_max * 25 / 100)) ;;
-    half)    thick=$((safe_max * 50 / 100)) ;;
-    full)    thick=$safe_max ;;
+  case "$pos:$stage" in
+    left:default|right:default) thick=$((safe_max * 25 / 100)) ;;
+    top:default|bottom:default) thick=$((safe_max * 32 / 100)) ;;  # a bit roomier than the side default
+    *:half)                     thick=$((safe_max * 50 / 100)) ;;
+    *:full)                     thick=$safe_max ;;
   esac
 
   # desired on-screen rect (ax,ay = true top-left; then compensate for
@@ -78,12 +93,24 @@ for o in json.load(sys.stdin):
       w=$thick;                   h=$((oh - OY - GAP))
       ;;
     top)
-      ax=$(((ow - CROSS_TB) / 2)); ay=$OY
-      w=$CROSS_TB;                 h=$thick
+      # default stays a slim, centered strip; half/full widen to match a
+      # real tiled window's full width (only the height differs between
+      # them at that point) — the same "half a tiled window" feel as the
+      # side modes' half stage, just on the other axis
+      if [ "$stage" = default ]; then
+        ax=$(((ow - CROSS_TB) / 2)); w=$CROSS_TB
+      else
+        ax=$GAP;                     w=$((ow - GAP * 2))
+      fi
+      ay=$OY; h=$thick
       ;;
     bottom)
-      ax=$(((ow - CROSS_TB) / 2)); ay=$((oh - thick - GAP))
-      w=$CROSS_TB;                 h=$thick
+      if [ "$stage" = default ]; then
+        ax=$(((ow - CROSS_TB) / 2)); w=$CROSS_TB
+      else
+        ax=$GAP;                     w=$((ow - GAP * 2))
+      fi
+      ay=$((oh - thick - GAP)); h=$thick
       ;;
   esac
 
@@ -99,28 +126,44 @@ case "$1" in
     apply "$2"
     ;;
   position)
-    name=$(last_sidebar)
-    case "$name" in sidebar-*) ;; *) exit 0 ;; esac
+    name=$(require_sidebar)
     printf '%s' "$2" > "$STATE_DIR/${name}.pos"
     apply "$name"
     ;;
-  resize)
-    name=$(last_sidebar)
-    case "$name" in sidebar-*) ;; *) exit 0 ;; esac
-    pos=$(cat "$STATE_DIR/${name}.pos" 2>/dev/null || echo left)
-    stage=$(cat "$STATE_DIR/${name}.stage" 2>/dev/null || echo default)
-    # position-relative: the arrow pointing toward screen center grows it
-    case "$pos:$2" in
-      left:right|right:left|top:down|bottom:up)     dir=grow ;;
-      left:left|right:right|top:up|bottom:down)     dir=shrink ;;
-      *) exit 0 ;;   # irrelevant axis for this dock (e.g. up/down while left-docked)
+  toggle-sides)
+    # context-aware within the current axis: left <-> right while docked to
+    # a side, top <-> bottom while in middle mode (toggle-mode picks the axis)
+    name=$(require_sidebar)
+    pos=$(current_pos "$name")
+    case "$pos" in
+      left)   new=right ;;
+      right)  new=left ;;
+      top)    new=bottom ;;
+      bottom) new=top ;;
     esac
-    case "$dir:$stage" in
-      grow:default)   stage=half ;;
-      grow:half)      stage=full ;;
-      shrink:full)    stage=half ;;
-      shrink:half)    stage=default ;;
-      *) ;;   # already capped, no-op
+    printf '%s' "$new" > "$STATE_DIR/${name}.pos"
+    apply "$name"
+    ;;
+  toggle-mode)
+    # sides (left/right) <-> middle (top/bottom), each side landing on a
+    # fixed default (left / top) rather than remembering the last value
+    name=$(require_sidebar)
+    pos=$(current_pos "$name")
+    case "$pos" in
+      left|right) new=top ;;
+      top|bottom) new=left ;;
+    esac
+    printf '%s' "$new" > "$STATE_DIR/${name}.pos"
+    apply "$name"
+    ;;
+  toggle-size)
+    # cycle the 3 thickness stages: default -> half -> full -> default
+    name=$(require_sidebar)
+    stage=$(cat "$STATE_DIR/${name}.stage" 2>/dev/null || echo default)
+    case "$stage" in
+      default) stage=half ;;
+      half)    stage=full ;;
+      full)    stage=default ;;
     esac
     printf '%s' "$stage" > "$STATE_DIR/${name}.stage"
     apply "$name"

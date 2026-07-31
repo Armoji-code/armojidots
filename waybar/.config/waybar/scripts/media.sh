@@ -120,17 +120,25 @@ im.save(out)
     ;;
   cava)
     # waybar's native cava module produces nothing here (not built with cava
-    # support), so run cava in raw-ascii mode and map levels 0-7 to block chars
+    # support), so run cava in raw-ascii mode and map levels 0-7 to block chars.
+    # waybar launches this once at startup and never restarts it if it exits —
+    # cava can die early if PulseAudio/PipeWire hasn't created a default
+    # monitor source yet at boot (a timing race, not deterministic), which
+    # left the module permanently blank for the rest of the session. Loop it
+    # so a dead cava (for any reason — that race, an audio server restart,
+    # a suspend/resume hiccup) just gets relaunched instead of staying dead.
     cfg=$(mktemp)
     printf '[general]\nframerate=30\nbars=10\nsensitivity=120\n[output]\nmethod=raw\nraw_target=/dev/stdout\ndata_format=ascii\nascii_max_range=7\n[input]\nmethod=pulse\nsource=auto\n' > "$cfg"
-    cava -p "$cfg" | python3 -u -c '
+    while :; do
+      cava -p "$cfg" | python3 -u -c '
 import sys
 bars = "▁▂▃▄▅▆▇█"
 for line in sys.stdin:
     vals = [v for v in line.strip().strip(";").split(";") if v != ""]
     print("".join(bars[min(int(v), 7)] for v in vals), flush=True)
 '
-    rm -f "$cfg"
+      sleep 2
+    done
     ;;
   playpause)
     last=""
