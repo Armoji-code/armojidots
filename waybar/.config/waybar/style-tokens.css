@@ -83,8 +83,8 @@
 
 /* clock: dot-matrix hero */
 #clock {
-  font-family: "Doto", "Space Mono", monospace;
-  font-weight: 900;
+  font-family: "Bitcount Grid Single", "Space Mono", monospace;
+  font-weight: 400;
   font-size: 16px;
   letter-spacing: 0.02em;
 }
