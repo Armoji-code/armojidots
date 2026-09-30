@@ -15,7 +15,8 @@
 # capsule) via `layer_effects "armoji-dock" … blur_ignore_transparent`.
 # Theme colors come from ~/.config/armoji-dock/{style,colors}.css.
 
-import gi, json, os, signal, subprocess, sys
+import gi, json, math, os, signal, subprocess, sys
+import cairo
 gi.require_version("Gtk", "4.0")
 gi.require_version("Gtk4LayerShell", "1.0")
 from gi.repository import Gtk, Gdk, Gio, GLib, Gtk4LayerShell as LS
@@ -27,6 +28,10 @@ DISTRO_LOGO = "/usr/share/icons/cachyos.svg"
 ICON = 40                 # running-app icon size
 HIDE_DELAY = 1000         # ms after leaving the dock before it hides
 HOTSPOT_H = 3             # px reveal strip at the very bottom edge
+MAG_MAX = 1.55            # macOS-style magnification: peak icon scale
+MAG_SIGMA = 58.0          # px falloff of the magnification bump
+MAG_LERP = 0.30           # per-frame easing toward the target scale
+MAG_EXTRA_X = 90          # px of transparent room either side for growth
 
 
 def swaymsg(*args):
@@ -130,6 +135,11 @@ class Dock(Gtk.Application):
         self.dock = None
         self._hide_src = 0
         self._css = []
+        self._mag_items = []
+        self._mag_c = None
+        self._mag_last = None
+        self._mag_tick_id = 0
+        self._mag_ready = False
 
     def do_command_line(self, cmdline):
         self.hold()
@@ -142,6 +152,9 @@ class Dock(Gtk.Application):
 
     def _on_reload(self):
         self.load_css()
+        if self.dock is not None and self.dock.get_visible():
+            self.rebuild()
+            self._mag_schedule_setup()
         return True
 
     # ── build the two surfaces ───────────────────────────────────────
@@ -179,9 +192,23 @@ class Dock(Gtk.Application):
         LS.set_margin(self.dock, LS.Edge.BOTTOM, 8)
         LS.set_exclusive_zone(self.dock, 0)
 
-        self.pill = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        self.pill.add_css_class("pill")
-        self.dock.set_child(self.pill)
+        # two layers on a fixed stage: the shelf (constant height, the visible
+        # surface) and the icon row that magnifies and may rise above it
+        self.stage = Gtk.Fixed()
+        self.shelf = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        self.shelf.add_css_class("pill")
+        self.spacer = Gtk.Box()
+        self.shelf.append(self.spacer)
+        self.row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        self.row.add_css_class("pill-row")
+        self.stage.put(self.shelf, 0, 0)
+        self.stage.put(self.row, 0, 0)
+        self.dock.set_child(self.stage)
+
+        mm = Gtk.EventControllerMotion()
+        mm.connect("motion", self._on_mag_motion)
+        mm.connect("leave", self._on_mag_leave)
+        self.stage.add_controller(mm)
 
         dm = Gtk.EventControllerMotion()
         dm.connect("enter", lambda *_: self.cancel_hide())
@@ -193,10 +220,13 @@ class Dock(Gtk.Application):
         if self.dock.get_visible():
             return
         self.rebuild()
+        self.stage.set_opacity(0.0)   # until the magnify layout is measured
         self.dock.present()
+        self._mag_schedule_setup()
 
     def hide(self):
         if self.dock:
+            self._mag_reset()
             self.dock.set_visible(False)
 
     def arm_hide(self):
@@ -222,7 +252,8 @@ class Dock(Gtk.Application):
             c = nxt
 
     def rebuild(self):
-        self.clear(self.pill)
+        self.clear(self.row)
+        self._mag_items = []
 
         # group by workspace, each into its own sub-pill (empty ws = no pill);
         # sidebars (scratchpad-parked, app_id starts "sidebar-") go in their
@@ -243,26 +274,166 @@ class Dock(Gtk.Application):
                 return (1, 0)   # non-numeric (e.g. scratchpad) sorts last
 
         for ws in sorted(by_ws, key=numeric_ws):
-            self.pill.append(self._ws_pill(by_ws[ws]))
+            self.row.append(self._ws_pill(by_ws[ws]))
 
         if sidebar:
             sep = Gtk.Separator(orientation=Gtk.Orientation.VERTICAL)
             sep.add_css_class("sep")
-            self.pill.append(sep)
-            self.pill.append(self._ws_pill(sidebar))
+            sep.set_valign(Gtk.Align.END)
+            sep.set_size_request(-1, ICON - 6)
+            self.row.append(sep)
+            self.row.append(self._ws_pill(sidebar))
 
     def _ws_pill(self, apps):
         box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
         box.add_css_class("ws-pill")
+        box.set_valign(Gtk.Align.END)   # tiles keep their own height, bottom-aligned
         for con_id, app_id, title in apps:
             icon_name = resolve_icon_name(app_id) or app_id
             b = Gtk.Button()
             b.add_css_class("app")
-            b.set_child(make_icon(icon_name, ICON))
+            b.set_valign(Gtk.Align.END)
+            img = make_icon(icon_name, ICON)
+            b.set_child(img)
+            self._mag_items.append({"btn": b, "img": img, "scale": 1.0,
+                                    "px": ICON, "rc": 0.0})
             b.set_tooltip_text(title or app_id)
             b.connect("clicked", self.on_app, con_id)
             box.append(b)
         return box
+
+    # ── magnify (macOS-style) ────────────────────────────────────────
+    def _mag_reset(self):
+        self._mag_c = None
+        self._mag_last = None
+        self._mag_ready = False
+        if self._mag_tick_id:
+            self.stage.remove_tick_callback(self._mag_tick_id)
+            self._mag_tick_id = 0
+
+    def _mag_schedule_setup(self):
+        """Measure the resting layout a few frames after (re)build, once GTK
+        has allocated it, then show the dock."""
+        self._mag_ready = False
+        n = [0]
+
+        def tick(_w, _clock):
+            n[0] += 1
+            if n[0] < 3:
+                return GLib.SOURCE_CONTINUE
+            self._mag_setup()
+            return GLib.SOURCE_REMOVE
+        self.stage.add_tick_callback(tick)
+
+    def _mag_setup(self):
+        items = self._mag_items
+        for it in items:
+            it["scale"], it["px"] = 1.0, ICON
+            it["img"].set_pixel_size(ICON)
+        rn = self.row.get_preferred_size()[1]
+        self.row_w0, self.row_h0 = rn.width, rn.height
+        self.spacer.set_size_request(self.row_w0, self.row_h0)
+        sn = self.shelf.get_preferred_size()[1]
+        self.pad_x = (sn.width - self.row_w0) / 2.0
+        self.pad_y = (sn.height - self.row_h0) / 2.0
+        self.shelf_h0 = sn.height
+        for it in items:
+            ok, r = it["btn"].compute_bounds(self.row)
+            it["rc"] = (r.get_x() + r.get_width() / 2.0) if ok else 0.0
+        self.stage_w = sn.width + 2 * MAG_EXTRA_X
+        self.stage_h = sn.height + int(math.ceil(ICON * (MAG_MAX - 1))) + 2
+        self.stage.set_size_request(self.stage_w, self.stage_h)
+        self.rest_row_left = (self.stage_w - sn.width) / 2.0 + self.pad_x
+        self._mag_ready = bool(items)
+        self._mag_layout()
+        self.stage.set_opacity(1.0)
+
+    def _mag_layout(self):
+        items = self._mag_items
+        d = [it["px"] - ICON for it in items]
+        acc, mc = 0, []
+        for it, dk in zip(items, d):
+            mc.append(it["rc"] + acc + dk / 2.0)
+            acc += dk
+        row_w = self.row_w0 + acc
+        row_h = self.row_h0 + (max(d) if d else 0)
+        cs = self._mag_c if self._mag_c is not None else self._mag_last
+        row_left = self.rest_row_left
+        if items and cs is not None and acc:
+            crel = cs - self.rest_row_left
+            rc = [it["rc"] for it in items]
+            if crel <= rc[0]:
+                mag = mc[0] + (crel - rc[0])
+            elif crel >= rc[-1]:
+                mag = mc[-1] + (crel - rc[-1])
+            else:
+                i = 0
+                while i + 1 < len(rc) and rc[i + 1] < crel:
+                    i += 1
+                span = (rc[i + 1] - rc[i]) or 1.0
+                t = (crel - rc[i]) / span
+                mag = mc[i] + t * (mc[i + 1] - mc[i])
+            row_left = cs - mag
+        shelf_w = row_w + 2 * self.pad_x
+        shelf_left = min(max(row_left - self.pad_x, 0.0), self.stage_w - shelf_w)
+        row_left = shelf_left + self.pad_x
+        shelf_top = self.stage_h - self.shelf_h0
+        row_top = self.stage_h - self.pad_y - row_h
+        self.spacer.set_size_request(int(round(row_w)), self.row_h0)
+        self.stage.move(self.shelf, shelf_left, shelf_top)
+        self.stage.move(self.row, row_left, row_top)
+        surf = self.dock.get_surface()
+        if surf is not None:
+            x0 = int(math.floor(min(shelf_left, row_left)))
+            x1 = int(math.ceil(max(shelf_left + shelf_w, row_left + row_w)))
+            y0 = int(math.floor(min(shelf_top, row_top)))
+            surf.set_input_region(cairo.Region(
+                cairo.RectangleInt(x0, y0, x1 - x0, int(self.stage_h) - y0)))
+
+    def _mag_ensure_tick(self):
+        if not self._mag_tick_id:
+            self._mag_tick_id = self.stage.add_tick_callback(self._mag_tick)
+
+    def _on_mag_motion(self, _ctl, x, _y):
+        self._mag_c = x
+        self._mag_last = x
+        if self._mag_ready:
+            self._mag_ensure_tick()
+
+    def _on_mag_leave(self, _ctl):
+        self._mag_c = None
+        if self._mag_ready:
+            self._mag_ensure_tick()
+
+    def _mag_tick(self, _w, _clock):
+        if not self._mag_ready:
+            self._mag_tick_id = 0
+            return GLib.SOURCE_REMOVE
+        c = self._mag_c
+        crel = None if c is None else c - self.rest_row_left
+        settled = True
+        for it in self._mag_items:
+            if crel is None:
+                target = 1.0
+            else:
+                dd = crel - it["rc"]
+                target = 1.0 + (MAG_MAX - 1.0) * math.exp(
+                    -(dd * dd) / (2.0 * MAG_SIGMA * MAG_SIGMA))
+            sc = it["scale"] + (target - it["scale"]) * MAG_LERP
+            if abs(target - sc) < 0.004:
+                sc = target
+            it["scale"] = sc
+            if sc != target:
+                settled = False
+            px = int(round(ICON * sc))
+            if px != it["px"]:
+                it["px"] = px
+                it["img"].set_pixel_size(px)
+        self._mag_layout()
+        if c is None and settled:
+            self._mag_tick_id = 0
+            return GLib.SOURCE_REMOVE
+        return GLib.SOURCE_CONTINUE
 
     def on_launcher(self, *_):
         self.hide()
