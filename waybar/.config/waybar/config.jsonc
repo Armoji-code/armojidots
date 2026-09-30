@@ -84,8 +84,9 @@
 
   // click toggles the month between number and name
   "clock": {
-    "format": "{:%H:%M  %Y-%m-%d}",
-    "format-alt": "{:%H:%M  %Y-%B-%d}",
+    "interval": 1,
+    "format": "{:%H:%M:%S  %Y-%m-%d}",
+    "format-alt": "{:%H:%M:%S  %Y-%B-%d}",
     "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>"
   },
 
