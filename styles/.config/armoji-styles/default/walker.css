@@ -1,0 +1,42 @@
+/* style pack "default" · walker — structural only */
+* {
+  font-family: "JetBrainsMono Nerd Font", monospace;
+}
+
+popover {
+  border-radius: 18px;
+  padding: 10px;
+}
+
+.box-wrapper {
+  padding: 16px;
+  border-radius: 14px;
+}
+
+.search-container {
+  border-radius: 10px;
+}
+
+.input {
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.item-box {
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.item-quick-activation {
+  border-radius: 5px;
+  padding: 10px;
+}
+
+.preview {
+  border-radius: 10px;
+}
+
+.keybind-label {
+  padding: 2px 4px;
+  border-radius: 4px;
+}

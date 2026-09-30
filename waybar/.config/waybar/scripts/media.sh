@@ -17,7 +17,8 @@ mkdir -p "$CACHE"
 
 # waybar orphans an exec's pipeline children on reload/restart; kill our own
 # children (cava/playerctl/python) when we're told to stop so nothing leaks
-trap 'pkill -P $$ 2>/dev/null' EXIT INT TERM
+trap 'pkill -P $$ 2>/dev/null' EXIT
+trap 'exit 0' INT TERM
 
 emit_pp() {
   case "$1" in

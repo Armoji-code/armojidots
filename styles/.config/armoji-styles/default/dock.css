@@ -1,0 +1,38 @@
+/* style pack "default" · armoji-dock — structural only */
+* {
+  font-family: "JetBrainsMono Nerd Font", monospace;
+}
+
+.pill {
+  border-radius: 999px;
+  padding: 6px 16px;
+}
+
+.ws-pill {
+  border-radius: 999px;
+  padding: 2px 6px;
+  margin: 0 3px;
+}
+
+button.app {
+  padding: 4px;
+  margin: 0 2px;
+  border-radius: 12px;
+  transition: background 120ms ease;
+}
+
+button.launcher {
+  padding: 4px 6px;
+  margin: 0 2px;
+  border-radius: 12px;
+  box-shadow: 0 0 10px 1px alpha(@accent, 0.55);
+  transition: box-shadow 150ms ease, background 120ms ease;
+}
+button.launcher:hover {
+  box-shadow: 0 0 16px 2px alpha(@accent, 0.85);
+}
+
+separator.sep {
+  min-width: 1px;
+  margin: 6px 6px;
+}

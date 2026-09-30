@@ -1,0 +1,28 @@
+/* style pack "default" · armoji-osd — structural only */
+* {
+  font-family: "JetBrainsMono Nerd Font", monospace;
+}
+
+.pill {
+  border-radius: 999px;
+  padding: 0 18px;
+}
+
+.osd-icon {
+  font-size: 18px;
+}
+
+.track {
+  border-radius: 999px;
+  min-height: 3px;
+}
+
+.fill {
+  border-radius: 999px;
+  min-height: 3px;
+}
+
+.osd-pct {
+  font-size: 12px;
+  min-width: 34px;
+}
