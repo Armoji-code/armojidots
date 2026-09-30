@@ -21,17 +21,15 @@
 # show) — NOT "currently focused window", which is unreliable here (the
 # sidebar doesn't always hold keyboard focus after being summoned).
 #
-# IMPORTANT: sway adds a CONSTANT offset to every floating `move position`
-# request on this setup — always +12 to x, always +61 to y, regardless of
-# the requested value (verified empirically, not a proximity/clamp thing).
-# Every formula below requests (desired - offset) so the true on-screen
-# result lands exactly at the desired inset from the real screen edge.
+# Placement uses `move absolute position` (layout coordinates: output origin
+# + inset), so it lands correctly on any output — including one that is not
+# at 0,0 (a plain `move position` is workspace-relative, and adding the
+# output offset to it threw the sidebar a whole screen off to the right).
 
 STATE_DIR="$HOME/.local/state/armojidots"
 mkdir -p "$STATE_DIR"
 
-OX=12    # sway's constant x offset on `move position`
-OY=61    # sway's constant y offset on `move position` (also clears the bar)
+OY=61    # top inset that clears the bar
 GAP=12   # visual inset from a true screen edge, no bar involved
 CROSS_TB=920   # ~90 terminal cells at font_size 13 (JetBrainsMono Nerd Font)
 
@@ -81,8 +79,7 @@ for o in json.load(sys.stdin):
     *:full)                     thick=$safe_max ;;
   esac
 
-  # desired on-screen rect (ax,ay = true top-left; then compensate for
-  # sway's constant offset to get the request that produces it)
+  # desired on-screen rect: ax,ay = top-left relative to the output
   case "$pos" in
     left)
       ax=$GAP;                    ay=$OY
@@ -114,11 +111,8 @@ for o in json.load(sys.stdin):
       ;;
   esac
 
-  rx=$((ox + ax - OX))
-  ry=$((oy + ay - OY))
-
   swaymsg "[app_id=\"$name\"] resize set $w px $h px" >/dev/null
-  swaymsg "[app_id=\"$name\"] move position $rx $ry" >/dev/null
+  swaymsg "[app_id=\"$name\"] move absolute position $((ox + ax)) $((oy + ay))" >/dev/null
 }
 
 case "$1" in
