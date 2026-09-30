@@ -1,4 +1,4 @@
-/* style pack "nothingos" · armoji-dock — rounded-square shelf, squircle buttons, circle launcher */
+/* style pack "nothingos" · armoji-dock — slim rounded-square shelf, square tiles (equal padding on all sides), circle launcher */
 * {
   font-family: "Space Mono", monospace;
 }
@@ -16,21 +16,21 @@ window.dock-hotspot.background {
 .pill {
   background: #141414;
   border: 1px solid #2a2a2a;
-  border-radius: 18px;
-  padding: 6px 14px;
+  border-radius: 16px;
+  padding: 4px;
 }
 
 .ws-pill {
   background: #1e1e1e;
-  border-radius: 13px;
-  padding: 2px 6px;
-  margin: 0 3px;
+  border-radius: 12px;
+  padding: 2px;
+  margin: 0;
 }
 
 button.app {
-  padding: 4px;
-  margin: 0 2px;
-  border-radius: 11px;
+  padding: 1px;
+  margin: 0;
+  border-radius: 10px;
   transition: background 150ms ease;
 }
 button.app:hover {
@@ -38,8 +38,8 @@ button.app:hover {
 }
 
 button.launcher {
-  padding: 4px 6px;
-  margin: 0 3px;
+  padding: 1px;
+  margin: 0 2px;
   border-radius: 999px;
   background: alpha(@accent, 0.16);
   border: 1px solid alpha(@accent, 0.55);
