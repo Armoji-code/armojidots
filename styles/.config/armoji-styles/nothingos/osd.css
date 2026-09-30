@@ -1,0 +1,32 @@
+/* style pack "nothingos" · armoji-osd — capsule, mono readout, flat bar */
+* {
+  font-family: "Space Mono", monospace;
+}
+
+.pill {
+  background: #000000;
+  border: 1px solid alpha(@fg, 0.14);
+  border-radius: 999px;
+  padding: 0 18px;
+}
+
+.osd-icon {
+  font-size: 18px;
+}
+
+.track {
+  background: alpha(@fg, 0.14);
+  border-radius: 0;
+  min-height: 2px;
+}
+
+.fill {
+  border-radius: 0;
+  min-height: 2px;
+}
+
+.osd-pct {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  min-width: 36px;
+}

@@ -1,0 +1,48 @@
+/* style pack "nothingos" · armoji-dock — flat black bar, hairline border, no glow */
+* {
+  font-family: "Space Mono", monospace;
+}
+
+.pill {
+  background: #000000;
+  border: 1px solid alpha(@fg, 0.14);
+  border-radius: 999px;
+  padding: 6px 16px;
+}
+
+.ws-pill {
+  background: transparent;
+  border: 1px solid alpha(@fg, 0.14);
+  border-radius: 999px;
+  padding: 2px 6px;
+  margin: 0 4px;
+}
+
+button.app {
+  padding: 4px;
+  margin: 0 2px;
+  border-radius: 8px;
+  transition: background 150ms ease;
+}
+button.app:hover {
+  background: alpha(@fg, 0.1);
+}
+
+button.launcher {
+  padding: 4px 6px;
+  margin: 0 2px;
+  border-radius: 8px;
+  border: 1px solid alpha(@fg, 0.3);
+  box-shadow: none;
+  transition: background 150ms ease;
+}
+button.launcher:hover {
+  background: alpha(@fg, 0.1);
+  box-shadow: none;
+}
+
+separator.sep {
+  background: alpha(@fg, 0.2);
+  min-width: 1px;
+  margin: 6px 6px;
+}
