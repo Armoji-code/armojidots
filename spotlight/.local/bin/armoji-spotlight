@@ -203,6 +203,7 @@ KEYBINDS = [
     ("Win + R",            "Toggle terminal sidebar"),
     ("Win + Shift + R",    "Toggle Claude Code sidebar"),
     ("Win + Shift + S",    "Screenshot region → clipboard"),
+    ("Win + Ctrl + S",     "Screenshot entire screen → clipboard"),
     ("Win + drag",         "Move window (left-drag) / resize (right-drag)"),
     ("Win + 1…0",          "Switch workspace (per-monitor)"),
     ("Win + Shift + 1…0",  "Move window to workspace and follow"),
