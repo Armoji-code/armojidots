@@ -19,6 +19,8 @@
 }
 
 .summary {
+  font-family: "Newsreader", serif;
+  font-size: 16px;
   font-weight: 500;
 }
 
@@ -65,6 +67,9 @@
 }
 
 .widget-title {
+  font-family: "Doto", "Space Mono", monospace;
+  font-weight: 900;
+  font-size: 22px;
   padding: 4px 6px;
 }
 

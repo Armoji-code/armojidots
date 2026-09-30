@@ -44,7 +44,8 @@
   border-radius: 10px;
 }
 .row-title {
-  font-size: 15px;
+  font-family: "Newsreader", serif;
+  font-size: 17px;
 }
 .row-subtext {
   font-family: "Space Mono", monospace;

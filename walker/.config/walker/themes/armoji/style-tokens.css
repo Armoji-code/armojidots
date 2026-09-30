@@ -46,6 +46,11 @@ row:selected .item-box {
   padding: 10px;
 }
 
+.item-text {
+  font-family: "Newsreader", serif;
+  font-size: 16px;
+}
+
 .item-subtext {
   font-family: "Space Mono", monospace;
   letter-spacing: 0.04em;

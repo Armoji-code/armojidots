@@ -1,4 +1,4 @@
-/* style pack "nothingos" · armoji-osd — capsule, circle icon chip, pill track */
+/* style pack "nothingos" · armoji-osd — rounded square, square icon chip, dot-matrix readout */
 * {
   font-family: "Space Mono", monospace;
 }
@@ -6,32 +6,34 @@
 .pill {
   background: #141414;
   border: 1px solid #2a2a2a;
-  border-radius: 999px;
+  border-radius: 14px;
   padding: 0 18px;
+  min-height: 58px;
 }
 
 .osd-icon {
   background: #242424;
-  border-radius: 999px;
-  min-width: 30px;
-  min-height: 30px;
-  margin: 7px 0;
-  font-size: 16px;
+  border-radius: 10px;
+  min-width: 34px;
+  min-height: 34px;
+  margin: 11px 0;
+  font-size: 17px;
 }
 
 .track {
   background: #2a2a2a;
-  border-radius: 999px;
-  min-height: 4px;
+  border-radius: 3px;
+  min-height: 6px;
 }
 
 .fill {
-  border-radius: 999px;
-  min-height: 4px;
+  border-radius: 3px;
+  min-height: 6px;
 }
 
 .osd-pct {
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  min-width: 36px;
+  font-family: "Doto", "Space Mono", monospace;
+  font-weight: 900;
+  font-size: 24px;
+  min-width: 64px;
 }

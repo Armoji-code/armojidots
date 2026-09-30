@@ -81,6 +81,14 @@
   color: #ffffff;
 }
 
+/* clock: dot-matrix hero */
+#clock {
+  font-family: "Doto", "Space Mono", monospace;
+  font-weight: 900;
+  font-size: 16px;
+  letter-spacing: 0.02em;
+}
+
 /* accent = live */
 #clock, #network.wifi, #custom-cava, #custom-media-playpause,
 #idle_inhibitor.activated {
@@ -122,7 +130,7 @@ image#cover, #cover {
 #custom-media-next { padding: 0 9px 0 4px; }
 #custom-media-prev:hover, #custom-media-next:hover { color: #ffffff; }
 #custom-media-info {
-  font-family: "Space Grotesk", sans-serif;
-  font-size: 11px;
+  font-family: "Newsreader", serif;
+  font-size: 12px;
   padding: 0 4px 0 8px;
 }
