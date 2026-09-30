@@ -372,47 +372,52 @@ EOF
   # "<size>x<size>/places" layout, but this pack uses "places/<size>" —
   # a different (still spec-valid) convention it can't find files under.
   SLOT_DIR="$HOME/.local/share/icons/Slot-Multicolor-Dark-Icons"
-  slot_color=$(python3 - "$ACC" <<'PYEOF'
-import sys, colorsys
-r, g, b = (int(sys.argv[1][i:i+2], 16) / 255 for i in (1, 3, 5))
-h, s, v = colorsys.rgb_to_hsv(r, g, b)
-deg = h * 360
-# Slot's palette has 11 colors (no teal/pink) — nearest-neighbor those in
-if s < 0.10:
-    print("grey")
-elif deg < 15 or deg >= 345:
-    print("red")
-elif deg < 40:
-    print("orange")
-elif deg < 65:
-    print("yellow")
-elif deg < 170:
-    print("green")
-elif deg < 220:
-    print("cyan")      # teal → cyan
-elif deg < 260:
-    print("blue")
-elif deg < 300:
-    print("violet")
-else:
-    print("magenta")   # pink → magenta
-PYEOF
-)
+  # The pack's own "red" folder is a pink-crimson (#d35f8d/#a02c5a), so
+  # instead of picking the nearest of its 11 colors we regenerate the folder
+  # in the exact accent: every folder-colored fill (pink/red hue band) is
+  # remapped to the accent hue, keeping the icon's own light/dark shading
+  # (its lightest folder color becomes the accent itself).
   if [ -d "$SLOT_DIR" ]; then
+    python3 - "$ACC" "$SLOT_DIR" <<'PYEOF2'
+import sys, re, colorsys, glob, os
+acc, slot = sys.argv[1], sys.argv[2]
+rgb = lambda h: tuple(int(h[i:i + 2], 16) / 255 for i in (1, 3, 5))
+hexs = lambda t: "#%02x%02x%02x" % tuple(max(0, min(255, round(c * 255))) for c in t)
+ah, al, as_ = colorsys.rgb_to_hls(*rgb(acc))
+pat = re.compile(r"#[0-9a-fA-F]{6}\b")
+
+def folder_col(c):
+    h, l, s = colorsys.rgb_to_hls(*rgb(c))
+    return s > 0.3 and 0.15 < l < 0.85 and (h >= 320 / 360 or h <= 20 / 360)
+
+for d in glob.glob(slot + "/places/*/"):
+    base = d + "folder-red.svg"
+    if not os.path.isfile(base):
+        continue
+    svg = open(base).read()
+    cols = {c.lower() for c in pat.findall(svg) if folder_col(c)}
+    if not cols:
+        continue
+    ref = max(cols, key=lambda c: colorsys.rgb_to_hls(*rgb(c))[1])
+    rh, rl, rs = colorsys.rgb_to_hls(*rgb(ref))
+    m = {}
+    for c in cols:
+        h, l, s = colorsys.rgb_to_hls(*rgb(c))
+        m[c] = hexs(colorsys.hls_to_rgb(ah, min(1.0, al * l / rl), min(1.0, as_ * s / rs)))
+    open(d + "folder-accent.svg", "w").write(
+        pat.sub(lambda mo: m.get(mo.group(0).lower(), mo.group(0)), svg))
+PYEOF2
     # Documents/Downloads/Music/Pictures/Videos/Templates/Public/Desktop/
     # Home/Root all ship their OWN distinct built-in art in this pack (same
     # idea as git/docker/steam) — only the bare "folder" (used for any
-    # custom-named folder with no special icon, e.g. a random project dir)
-    # gets tinted to the accent.
-    generic_folders="folder folder-open"
+    # custom-named folder with no special icon) gets the accent.
     for size_dir in "$SLOT_DIR"/places/*/; do
-      target="${size_dir}folder-$slot_color.svg"
-      [ -f "$target" ] || continue
-      for fname in $generic_folders; do
+      [ -f "${size_dir}folder-accent.svg" ] || continue
+      for fname in folder folder-open; do
         dest="${size_dir}${fname}.svg"
         # only relink names the pack actually ships at this size
         { [ -f "$dest" ] || [ -L "$dest" ]; } || continue
-        ln -sf "folder-$slot_color.svg" "$dest"
+        ln -sf "folder-accent.svg" "$dest"
       done
     done
     gtk-update-icon-cache -qf "$SLOT_DIR" >/dev/null 2>&1
