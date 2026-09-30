@@ -17,7 +17,7 @@
   padding: 0 4px;
   margin-top: 3px;
   margin-bottom: 3px;
-  min-height: 28px;
+  min-height: 33px;
 }
 .modules-center {
   border: 1px solid #2a2a2a;
@@ -25,7 +25,7 @@
   padding: 0 4px;
   margin-top: 3px;
   margin-bottom: 3px;
-  min-height: 28px;
+  min-height: 33px;
 }
 
 /* text modules: rounded-square chips */
@@ -33,9 +33,9 @@
 #bluetooth, #tray {
   background: #1e1e1e;
   border-radius: 7px;
-  min-height: 22px;
+  min-height: 29px;
   padding: 0 9px;
-  margin: 3px 2px;
+  margin: 2px 2px;
 }
 #tray { background: transparent; }
 
@@ -43,10 +43,10 @@
 #custom-power, #idle_inhibitor, #custom-bluelight, #custom-notifications {
   background: #1e1e1e;
   border-radius: 999px;
-  min-width: 22px;
-  min-height: 22px;
+  min-width: 29px;
+  min-height: 29px;
   padding: 0 2px;
-  margin: 3px 2px;
+  margin: 2px 2px;
 }
 
 #clock:hover, #network:hover, #pulseaudio:hover, #backlight:hover,
@@ -58,10 +58,10 @@
 
 /* workspaces: circles, active = accent-tinted */
 #workspaces button {
-  min-width: 22px;
-  min-height: 22px;
+  min-width: 29px;
+  min-height: 29px;
   padding: 0;
-  margin: 3px 2px;
+  margin: 2px 2px;
   border: none;
   border-radius: 999px;
   box-shadow: none;
@@ -109,9 +109,9 @@
 #media {
   background: #1e1e1e;
   border-radius: 999px;
-  min-height: 22px;
+  min-height: 29px;
   padding: 0 6px;
-  margin: 3px 2px;
+  margin: 2px 2px;
 }
 image#cover, #cover {
   border-radius: 999px;
@@ -123,6 +123,6 @@ image#cover, #cover {
 #custom-media-prev:hover, #custom-media-next:hover { color: #ffffff; }
 #custom-media-info {
   font-family: "Newsreader", serif;
-  font-size: 12px;
+  font-size: 11px;
   padding: 0 4px 0 8px;
 }
