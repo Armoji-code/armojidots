@@ -81,6 +81,10 @@
   color: #ffffff;
 }
 
+#clock {
+  font-size: 15px;
+}
+
 /* accent = live */
 #clock, #network.wifi, #custom-cava, #custom-media-playpause,
 #idle_inhibitor.activated {
