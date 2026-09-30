@@ -117,7 +117,7 @@ resolve() {
   if [ "$(pack_flag "$(current_style)" neutral)" = 1 ]; then
     # monochrome surfaces + exact accent; terminal colors = status palette
     ACC="$seed"
-    BG="#000000" BG2="#111111" FG="#E8E8E8" MUTED="#999999"
+    BG="#121212" BG2="#1C1C1C" FG="#D4D4D4" MUTED="#8C8C8C"
     R1="#D71921" R2="#4A9E5C" R3="#D4A843" R4="#5B9BF6" R5="#999999" R6="#E8E8E8"
     B1="#F0464D" B2="#6DBF7E" B3="#E8C468" B4="#7FB2FF" B5="#BBBBBB" B6="#FFFFFF"
     ALPHA_BAR=1 ALPHA_POP=1 ALPHA_CC=1 ALPHA_TERM=1

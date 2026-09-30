@@ -1,11 +1,11 @@
-/* style pack "nothingos" · armoji-spotlight — black panels, hairlines, mono metadata */
+/* style pack "nothingos" · armoji-spotlight — capsule search, rounded-square panel + tiles */
 * {
   font-family: "Space Grotesk", sans-serif;
 }
 
 .pill {
-  background: #000000;
-  border: 1px solid alpha(@fg, 0.14);
+  background: #141414;
+  border: 1px solid #2a2a2a;
 }
 
 .search-pill {
@@ -14,7 +14,7 @@
 }
 
 .content-pill {
-  border-radius: 0;
+  border-radius: 16px;
   padding: 10px;
 }
 
@@ -24,8 +24,9 @@
 }
 
 .cell {
+  background: #1c1c1c;
   padding: 10px 6px;
-  border-radius: 4px;
+  border-radius: 12px;
 }
 .cell-label {
   font-family: "Space Mono", monospace;
@@ -33,13 +34,13 @@
   letter-spacing: 0.08em;
 }
 .cell.selected, .row.selected {
-  background: alpha(@fg, 0.08);
-  border: 1px solid alpha(@fg, 0.3);
+  background: alpha(@accent, 0.16);
+  border: 1px solid alpha(@accent, 0.55);
 }
 
 .row {
   padding: 8px 12px;
-  border-radius: 4px;
+  border-radius: 10px;
 }
 .row-title {
   font-size: 15px;

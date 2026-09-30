@@ -1,13 +1,13 @@
-/* style pack "nothingos" · swaync — flat #111 cards, hairline border, mono timestamps */
+/* style pack "nothingos" · swaync — grey cards (rounded squares), circle close, pill buttons */
 * {
   font-family: "Space Grotesk", sans-serif;
   font-size: 13px;
 }
 
 .notification, .control-center .notification {
-  background: #111111;
-  border: 1px solid #222222;
-  border-radius: 12px;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 16px;
 }
 
 .notification-content {
@@ -33,28 +33,30 @@
 }
 
 .close-button {
-  background: transparent;
-  border: 1px solid #333333;
-  border-radius: 4px;
-  padding: 2px 6px;
-  margin: 6px;
+  background: #2a2a2a;
+  border: none;
+  border-radius: 999px;
+  min-width: 20px;
+  min-height: 20px;
+  padding: 0;
+  margin: 8px;
 }
 .close-button:hover, .notification-action:hover, .widget-title button:hover {
-  background: alpha(@fg, 0.1);
+  background: alpha(@accent, 0.3);
 }
 
 .notification-action {
-  background: transparent;
-  border: 1px solid #333333;
-  border-radius: 4px;
+  background: #242424;
+  border: none;
+  border-radius: 10px;
   padding: 6px;
   margin: 4px;
 }
 
 .control-center {
-  background: #000000;
-  border: 1px solid #222222;
-  border-radius: 12px;
+  background: #121212;
+  border: 1px solid #2a2a2a;
+  border-radius: 20px;
   padding: 12px;
 }
 
@@ -67,10 +69,10 @@
 }
 
 .widget-title button {
-  background: transparent;
-  border: 1px solid #333333;
-  border-radius: 4px;
-  padding: 4px 10px;
+  background: #242424;
+  border: none;
+  border-radius: 999px;
+  padding: 4px 12px;
 }
 
 .widget-dnd {
@@ -78,7 +80,7 @@
 }
 
 .widget-dnd switch {
-  background: #222222;
+  background: #2a2a2a;
   border-radius: 999px;
 }
 .widget-dnd switch slider {
