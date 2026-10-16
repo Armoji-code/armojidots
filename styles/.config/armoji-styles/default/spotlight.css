@@ -35,3 +35,8 @@
 .row-subtext {
   font-size: 12px;
 }
+
+/* motion: selection highlight fades between rows/tiles */
+.cell, .row {
+  transition: background 140ms ease, border-color 140ms ease;
+}

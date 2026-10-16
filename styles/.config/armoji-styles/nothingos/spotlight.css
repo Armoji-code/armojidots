@@ -59,3 +59,8 @@ window.spotlight.background {
   font-size: 11px;
   letter-spacing: 0.06em;
 }
+
+/* motion: selection highlight fades between rows/tiles */
+.cell, .row {
+  transition: background 140ms ease, border-color 140ms ease;
+}

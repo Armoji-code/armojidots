@@ -30,7 +30,8 @@
 # via the running instance, so it opens instantly. Closes on Escape, on
 # launch, or when focus leaves both windows.
 
-import gi, json, os, signal, subprocess, sys
+import gi, hashlib, json, os, signal, subprocess, sys, threading
+import cairo
 from urllib.parse import quote
 gi.require_version("Gtk", "4.0")
 try:
@@ -38,7 +39,10 @@ try:
     from gi.repository import Gtk4LayerShell as LayerShell
 except (ValueError, ImportError):
     LayerShell = None   # fall back to a normal floating search window
-from gi.repository import Gtk, Gdk, Gio, GLib
+gi.require_version("GdkPixbuf", "2.0")
+gi.require_version("Graphene", "1.0")
+gi.require_version("Gsk", "4.0")
+from gi.repository import Gtk, Gdk, GdkPixbuf, Gio, GLib, Graphene, Gsk
 
 APP_ID = "org.armojidots.Spotlight"   # shared app_id; windows differ by title
 CONFIG = os.path.expanduser("~/.config/armoji-spotlight")
@@ -53,9 +57,44 @@ GRID_COLS = 5
 GRID_ROWS = 2
 LIST_LIMIT = 8
 FOCUS_OUT_CLOSE = True    # close when focus leaves the launcher
+ANIMATE = True            # macOS-style open/close + results-panel motion
+LIST_MAXH = 440           # fixed height of the (mostly transparent) results window
+OPEN_MS, CLOSE_MS, RESIZE_MS, FADE_MS = 190, 110, 200, 150
 
 PALETTES = ["wallpaper", "ruby", "orange", "dandelion", "emerald",
             "cobalt", "bubblegum", "purpur", "b&w"]
+STYLES_DIR = os.path.expanduser("~/.config/armoji-styles")
+STATE_DIR = os.path.expanduser("~/.local/state/armojidots")
+
+
+def current_style():
+    try:
+        with open(os.path.join(STATE_DIR, "style")) as f:
+            return f.read().strip() or "default"
+    except OSError:
+        return "default"
+
+
+def pack_info(name):
+    """key=value pairs from styles/<pack>/pack.conf (title, description,
+    allowed_palettes, neutral). Missing file/keys → empty."""
+    info = {}
+    try:
+        with open(os.path.join(STYLES_DIR, name, "pack.conf")) as f:
+            for line in f:
+                line = line.split("#", 1)[0].strip()
+                if "=" in line:
+                    k, v = line.split("=", 1)
+                    info[k.strip()] = v.strip().strip('"')
+    except OSError:
+        pass
+    return info
+
+
+def style_palettes():
+    """Palettes the active style pack allows (all of them if it doesn't lock)."""
+    allowed = pack_info(current_style()).get("allowed_palettes", "").split()
+    return allowed or PALETTES
 
 
 def item(text, subtext, icon, kind, value, icon_px=None):
@@ -121,7 +160,9 @@ def cmd_set(arg):
     sub = parts[0].lower() if parts else ""
     rest = parts[1].strip().lower() if len(parts) > 1 else ""
 
+    neutral = pack_info(current_style()).get("neutral") == "1"
     cats = [  # name, match-key, icon, subtext, kind, value
+        ("Style",     "style",     "applications-graphics",         "", "fill", "/set style "),
         ("Colors",    "color",     "preferences-desktop-theme",     "", "fill", "/set color "),
         ("Tone",      "tone",      "preferences-desktop-display",   "", "fill", "/set tone "),
         ("Wallpaper", "wallpaper", "preferences-desktop-wallpaper",
@@ -133,15 +174,19 @@ def cmd_set(arg):
         ("Monitors",  "monitors",  "video-display",                 "", "cmd",
          "~/.config/sway/scripts/monitors.sh"),
     ]
-    known = {"color", "colors", "tone", "wallpaper", "wall",
+    if neutral:   # monochrome packs ignore tone
+        cats = [c for c in cats if c[1] != "tone"]
+    known = {"style", "styles", "color", "colors", "tone", "wallpaper", "wall",
              "wifi", "bluetooth", "blue", "monitors", "monitor", "displays"}
     if sub not in known:   # "/set" or a half-typed category → show the menu
         return [item(name, sub_t, icon, kind, val)
                 for name, key, icon, sub_t, kind, val in cats
                 if sub in name.lower() or sub in key]
+    if sub in ("style", "styles"):
+        return styles(rest)
     if sub in ("color", "colors"):
         return [item(p, "palette", "preferences-desktop-theme", "cmd",
-                     f"{THEME} apply {p}") for p in PALETTES if rest in p.lower()]
+                     f"{THEME} apply {p}") for p in style_palettes() if rest in p.lower()]
     if sub == "tone":
         return [item(t.capitalize(), "intensity", "preferences-desktop-display",
                      "cmd", f"{THEME} tone {t}")
@@ -156,6 +201,30 @@ def cmd_set(arg):
                      "~/.config/sway/scripts/monitors.sh")]
     return [item("Bluetooth (bluetuith)", "", "bluetooth", "cmd",
                  "foot --app-id=float-tui -e bluetuith")]
+
+
+def styles(filter_str):
+    # one entry per pack in ~/.config/armoji-styles; selecting it restyles the
+    # whole desktop (bar, dock, OSD, notifications, launcher, terminals, …)
+    cur = current_style()
+    try:
+        names = sorted(n for n in os.listdir(STYLES_DIR)
+                       if os.path.isdir(os.path.join(STYLES_DIR, n)))
+    except OSError:
+        names = []
+    out = []
+    for n in names:
+        info = pack_info(n)
+        title = info.get("title", n)
+        if filter_str and filter_str not in (n + " " + title).lower():
+            continue
+        sub = info.get("description", "")
+        if n == cur:
+            sub = ("active · " + sub) if sub else "active"
+        out.append(item(title, sub, "applications-graphics", "cmd",
+                        f"{THEME} style {n}"))
+    return out or [item("No style packs found", STYLES_DIR, "image-missing",
+                        "noop", "")]
 
 
 def wallpapers(filter_str):
@@ -224,11 +293,44 @@ COMMANDS = {"/power": cmd_power, "/set": cmd_set,
             "/web": cmd_web, "/keys": cmd_keys, "/update": cmd_update}
 
 
+THUMBS = os.path.expanduser("~/.cache/armoji-spotlight/thumbs")
+BIG_IMAGE = 150_000        # bytes; larger image files get a cached thumbnail
+
+
+def thumb_for(path, px):
+    """Cached downscaled copy of a big image, so a 5 MB wallpaper isn't
+    re-decoded on every keystroke. Falls back to the original on any error."""
+    try:
+        st = os.stat(path)
+        if st.st_size < BIG_IMAGE:
+            return path
+        key = hashlib.sha1(f"{path}|{st.st_mtime_ns}|{px}".encode()).hexdigest()[:20]
+        out = os.path.join(THUMBS, key + ".png")
+        if not os.path.exists(out):
+            os.makedirs(THUMBS, exist_ok=True)
+            pb = GdkPixbuf.Pixbuf.new_from_file_at_scale(path, px * 2, px * 2, True)
+            tmp = out + f".{os.getpid()}.tmp"
+            pb.savev(tmp, "png", [], [])
+            os.replace(tmp, out)
+        return out
+    except Exception:
+        return path
+
+
+def warm_wallpaper_thumbs():
+    try:
+        for f in sorted(os.listdir(WALLPAPERS)):
+            if f.lower().endswith((".jpg", ".jpeg", ".png", ".webp")):
+                thumb_for(os.path.join(WALLPAPERS, f), 56)
+    except OSError:
+        pass
+
+
 def make_icon(name, px):
     img = Gtk.Image()
     img.set_pixel_size(px)
     if name and name.startswith("/") and os.path.exists(name):
-        img.set_from_file(name)
+        img.set_from_file(thumb_for(name, px))
     elif name:
         img.set_from_icon_name(name)
     else:
@@ -251,12 +353,20 @@ class Spotlight(Gtk.Application):
         self._was_active = False
         self._closeable = False
         self._css_providers = []
+        self._anims = {}
+        self._tick_id = 0
+        self._closing = False
+        self._mode = None
+        self._clip_h = 0.0
+        self._cp_dy = 0.0
+        self._target_h = 0
 
     # ── invocation ───────────────────────────────────────────────────
     def do_command_line(self, cmdline):
         if "--daemon" in cmdline.get_arguments():
             self.hold()
             self.ensure_windows()
+            threading.Thread(target=warm_wallpaper_thumbs, daemon=True).start()
             # live theme reload: theme.sh sends SIGUSR1 after regenerating
             # colors.css, so the resident launcher re-reads it without a restart
             GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGUSR1,
@@ -311,7 +421,11 @@ class Spotlight(Gtk.Application):
         self.entry.connect("changed", self.on_changed)
         self.entry.connect("activate", lambda *_: self.activate_selected())
         search_pill.append(self.entry)
-        self.search_win.set_child(search_pill)
+        self.search_pill = search_pill
+        self.search_stage = Gtk.Fixed()
+        self.search_stage.set_size_request(WIDTH, SEARCH_H)
+        self.search_stage.put(search_pill, 0, 0)
+        self.search_win.set_child(self.search_stage)
 
         keys = Gtk.EventControllerKey()
         keys.connect("key-pressed", self.on_key)
@@ -338,7 +452,21 @@ class Spotlight(Gtk.Application):
         content_pill.add_css_class("pill")
         content_pill.add_css_class("content-pill")
         content_pill.set_size_request(WIDTH, -1)
-        self.list_win.set_child(content_pill)
+        self.content_pill = content_pill
+        # fixed-size window (so the compositor never resizes it mid-animation);
+        # the pill inside grows/shrinks and rises into place
+        self.list_stage = Gtk.Fixed()
+        self.list_stage.set_size_request(WIDTH, LIST_MAXH)
+        self.list_stage.put(content_pill, 0, 0)
+        self.list_win.set_child(self.list_stage)
+
+        # inner box lives in a clip whose height we tween (drop-down reveal)
+        self.inner = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        self.clip = Gtk.ScrolledWindow()
+        self.clip.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.EXTERNAL)
+        self.clip.set_propagate_natural_height(False)
+        self.clip.set_child(self.inner)
+        content_pill.append(self.clip)
 
         self.grid = Gtk.FlowBox()
         self.grid.add_css_class("grid")
@@ -346,7 +474,7 @@ class Spotlight(Gtk.Application):
         self.grid.set_max_children_per_line(GRID_COLS)
         self.grid.set_selection_mode(Gtk.SelectionMode.NONE)
         self.grid.set_homogeneous(True)
-        content_pill.append(self.grid)
+        self.inner.append(self.grid)
 
         self.scroller = Gtk.ScrolledWindow()
         self.scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
@@ -356,12 +484,12 @@ class Spotlight(Gtk.Application):
         self.listbox.add_css_class("list")
         self.listbox.set_selection_mode(Gtk.SelectionMode.NONE)
         self.scroller.set_child(self.listbox)
-        content_pill.append(self.scroller)
+        self.inner.append(self.scroller)
 
     # ── show / hide / position ───────────────────────────────────────
     def toggle(self):
         self.ensure_windows()
-        if self.search_win.get_visible():
+        if self.search_win.get_visible() and not self._closing:
             self.hide()
         else:
             self.show()
@@ -369,13 +497,165 @@ class Spotlight(Gtk.Application):
     def show(self):
         self._was_active = False
         self._closeable = False          # don't close during the open churn
+        self._closing = False
+        self._anims.clear()
+        self._mode = None
+        # start invisible/small so nothing flashes before the open animation
+        self._apply_search(0.0, 0.955)
+        self._apply_content(0.0, -10.0)
+        self._set_clip(0)
         self.entry.set_text("")
         self.list_win.present()          # present list first…
         self.search_win.present()        # …so search ends up focused + on top
         self.entry.grab_focus()
         self.show_empty()
         GLib.timeout_add(20, self.position)   # place once mapped
+        GLib.timeout_add(32, self._play_open)  # animate in once placed
         GLib.timeout_add(350, self._arm)      # enable focus-out close after churn
+
+    # ── motion ───────────────────────────────────────────────────────
+    @staticmethod
+    def _out_cubic(p):
+        return 1 - (1 - p) ** 3
+
+    @staticmethod
+    def _out_quart(p):
+        return 1 - (1 - p) ** 4
+
+    @staticmethod
+    def _in_cubic(p):
+        return p ** 3
+
+    def _anim(self, key, dur, fn, ease, delay=0, done=None):
+        """Run fn(eased 0..1) every frame for dur ms. Same key replaces."""
+        if not ANIMATE:
+            fn(1.0)
+            if done:
+                done()
+            return
+        self._anims[key] = {"t0": None, "dur": dur, "delay": delay,
+                            "fn": fn, "ease": ease, "done": done}
+        if not self._tick_id:
+            self._tick_id = self.search_win.add_tick_callback(self._tick)
+
+    def _tick(self, _w, clock):
+        now = clock.get_frame_time() / 1000.0
+        for key in list(self._anims):
+            a = self._anims.get(key)
+            if a is None:
+                continue
+            if a["t0"] is None:
+                a["t0"] = now
+            el = now - a["t0"] - a["delay"]
+            if el < 0:
+                continue
+            p = min(1.0, el / a["dur"])
+            a["fn"](a["ease"](p))
+            if p >= 1.0 and self._anims.get(key) is a:
+                del self._anims[key]
+                if a["done"]:
+                    a["done"]()
+        if not self._anims:
+            self._tick_id = 0
+            return GLib.SOURCE_REMOVE
+        return GLib.SOURCE_CONTINUE
+
+    @staticmethod
+    def _xf(scale, dx, dy, cx, cy):
+        t = Gsk.Transform.new()
+        t = t.translate(Graphene.Point().init(cx + dx, cy + dy))
+        t = t.scale(scale, scale)
+        return t.translate(Graphene.Point().init(-cx, -cy))
+
+    def _apply_search(self, opacity, scale):
+        self.search_pill.set_opacity(opacity)
+        self.search_stage.set_child_transform(
+            self.search_pill, self._xf(scale, 0, 0, WIDTH / 2, SEARCH_H / 2))
+
+    def _apply_content(self, opacity, dy):
+        self._cp_dy = dy
+        self.content_pill.set_opacity(opacity)
+        self.list_stage.set_child_transform(
+            self.content_pill, self._xf(1.0, 0, dy, WIDTH / 2, 0))
+
+    def _set_clip(self, h):
+        h = int(round(max(0.0, h)))
+        if h > self._clip_h:
+            self.clip.set_max_content_height(h)
+            self.clip.set_min_content_height(h)
+        else:
+            self.clip.set_min_content_height(h)
+            self.clip.set_max_content_height(h)
+        self._clip_h = h
+        self._sync_input()
+
+    def _sync_input(self):
+        # only the visible pill takes pointer input; the rest of the fixed-size
+        # window stays click-through
+        surf = self.list_win.get_surface() if self.list_win else None
+        if surf is None:
+            return
+        ph = self.content_pill.get_height()
+        ph = max(ph, int(self._clip_h) + 24)
+        surf.set_input_region(cairo.Region(cairo.RectangleInt(
+            0, max(0, int(self._cp_dy)), WIDTH, min(LIST_MAXH, ph + 12))))
+
+    def _content_height(self):
+        return self.inner.measure(Gtk.Orientation.VERTICAL, WIDTH - 24)[1]
+
+    def _content_changed(self, mode):
+        # a text replacement fires "changed" twice (delete, insert): only
+        # animate the final state, once the main loop is idle
+        self._pending_mode = mode
+        if not getattr(self, "_content_idle", 0):
+            self._content_idle = GLib.idle_add(self._content_apply)
+
+    def _content_apply(self):
+        self._content_idle = 0
+        mode = self._pending_mode
+        switched = mode != self._mode
+        self._mode = mode
+        h = self._content_height()
+        if not self._anims.get("open-h") and self.list_win.get_visible() \
+                and self.content_pill.get_opacity() >= 0.99:
+            # live change (typing): ease the panel to its new height
+            start = self._clip_h
+            self._anim("h", RESIZE_MS, lambda e, a=start, b=h: self._set_clip(a + (b - a) * e),
+                       self._out_cubic)
+            if switched:
+                self.inner.set_opacity(0.0)
+                self._anim("fade", FADE_MS, lambda e: self.inner.set_opacity(e), self._out_cubic)
+        else:
+            self._target_h = h     # the open animation grows to this
+        return False
+
+    def _play_open(self):
+        if self._closing or not self.search_win.get_visible():
+            return False
+        self.inner.set_opacity(1.0)
+        self._anim("s", OPEN_MS, lambda e: self._apply_search(e, 0.955 + 0.045 * e),
+                   self._out_quart)
+        self._anim("c", OPEN_MS + 30, lambda e: self._apply_content(e, -10.0 * (1 - e)),
+                   self._out_cubic, delay=40)
+        start = self._clip_h
+        # read the target live: typing during the open animation retargets it
+        self._anim("open-h", OPEN_MS + 50,
+                   lambda e, a=start: self._set_clip(a + (self._target_h - a) * e),
+                   self._out_cubic, delay=40)
+        return False
+
+    def _play_close(self):
+        self._closing = True
+        o_s = self.search_pill.get_opacity()
+        o_c = self.content_pill.get_opacity()
+        dy0 = self._cp_dy
+        self._anim("s", CLOSE_MS, lambda e: self._apply_search(o_s * (1 - e), 1 - 0.03 * e),
+                   self._in_cubic)
+        self._anim("c", CLOSE_MS,
+                   lambda e: self._apply_content(o_c * (1 - e), dy0 - 6.0 * e),
+                   self._in_cubic, done=self._finish_hide)
+        self._anims.pop("open-h", None)
+        self._anims.pop("h", None)
 
     def _arm(self):
         self._closeable = True
@@ -384,6 +664,17 @@ class Spotlight(Gtk.Application):
 
     def hide(self, *_):
         self._was_active = False
+        if self._closing:
+            return
+        if (ANIMATE and self.search_win and self.search_win.get_visible()
+                and self.search_win.get_mapped()):
+            self._play_close()
+        else:
+            self._finish_hide()
+
+    def _finish_hide(self):
+        self._closing = False
+        self._anims.clear()
         if self.list_win:
             self.list_win.set_visible(False)
         if self.search_win:
@@ -488,6 +779,7 @@ class Spotlight(Gtk.Application):
         self.grid.set_visible(True)
         self.scroller.set_visible(False)
         self.select(0)
+        self._content_changed("grid")
 
     def show_list(self, items):
         self.clear(self.listbox)
@@ -514,6 +806,7 @@ class Spotlight(Gtk.Application):
         self.grid.set_visible(False)
         self.scroller.set_visible(True)
         self.select(0)
+        self._content_changed("list")
 
     def arm_click(self, widget, index):
         click = Gtk.GestureClick()
