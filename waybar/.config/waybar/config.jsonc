@@ -3,6 +3,9 @@
 {
   "layer": "top",
   "position": "top",
+  // laptop panel only: an external display just mirrors it (scripts/mirror.sh),
+  // and a second bar doubled every module script (cava, media, lang…)
+  "output": ["eDP-1"],
   "height": 34,
   "spacing": 6,
 

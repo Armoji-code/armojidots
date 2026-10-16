@@ -13,6 +13,10 @@ set $browser zen-browser
 # nwg-displays (/set monitors) — not present until you actually save a
 # layout there once; sway tolerates a missing include, so this is safe
 # on a fresh install too.
+# Any external display comes up at 1080p/scale 1 straight away (never its native
+# 4K — that crawled on this iGPU); scripts/mirror.sh then parks it and mirrors the
+# panel. Specific outputs in the included file override this.
+output * resolution 1920x1080 scale 1
 include ~/.config/sway/outputs
 include ~/.config/sway/workspaces
 
