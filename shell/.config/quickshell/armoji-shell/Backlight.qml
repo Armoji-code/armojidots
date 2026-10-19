@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 
 Chip {
+  numeric: true
   visible: Brightness.dev !== ""
   text: "󰃞 " + Brightness.percent + "%"
   readonly property string osd: Quickshell.env("HOME") + "/.config/sway/scripts/osd.sh"

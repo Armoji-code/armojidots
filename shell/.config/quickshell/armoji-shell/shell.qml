@@ -12,4 +12,5 @@ ShellRoot {
   Osd {}
   Dock {}
   Spotlight {}
+  Sidebar {}
 }

@@ -4,7 +4,7 @@
    rounded-square text chips. Greys: #121212 bar / #1e1e1e chip / #2a2a2a line.
    Accent (RGBY) = live/active things. Status: grey -> white -> red, bulb yellow. */
 * {
-  font-family: "Space Mono", "JetBrainsMono Nerd Font", monospace;
+  font-family: "Geist Mono", "JetBrainsMono Nerd Font", monospace;
   font-size: 12px;
   letter-spacing: 0.04em;
   min-height: 0;
@@ -126,7 +126,7 @@ image#cover, #cover {
 #custom-media-next { padding: 0 9px 0 4px; }
 #custom-media-prev:hover, #custom-media-next:hover { color: #ffffff; }
 #custom-media-info {
-  font-family: "Newsreader", serif;
+  font-family: "Geist", sans-serif;
   font-size: 11px;
   padding: 0 4px 0 8px;
 }

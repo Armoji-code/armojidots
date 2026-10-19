@@ -91,5 +91,6 @@
   "letterSpacing": 0,
   "spLabelSpacing": 0,
   "spSubSpacing": 0,
-  "groupGap": 3
+  "groupGap": 3,
+  "termFont": "JetBrainsMono Nerd Font"
 }

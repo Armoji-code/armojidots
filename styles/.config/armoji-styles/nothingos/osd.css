@@ -1,6 +1,6 @@
 /* style pack "nothingos" · armoji-osd — rounded square, square icon chip, CSS draws the whole shape (compositor radius 0), dot-matrix readout */
 * {
-  font-family: "Space Mono", monospace;
+  font-family: "Geist Mono", monospace;
 }
 
 /* the theme's window.csd rule rounds + outlines the window and clips the pill's border */
@@ -39,7 +39,7 @@ window.osd.background {
 }
 
 .osd-pct {
-  font-family: "Bitcount Grid Single", "Space Mono", monospace;
+  font-family: "Bitcount Grid Single", "Geist Mono", monospace;
   font-weight: 400;
   font-size: 14px;
   min-width: 36px;

@@ -1,6 +1,6 @@
 /* style pack "nothingos" · walker — rounded-square panel, pill input, squircle items */
 * {
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "Geist", sans-serif;
 }
 
 popover {
@@ -22,7 +22,7 @@ popover {
 }
 
 .input {
-  font-family: "Space Mono", monospace;
+  font-family: "Geist Mono", monospace;
   background: #1e1e1e;
   border: 1px solid #2a2a2a;
   border-radius: 999px;
@@ -46,12 +46,12 @@ row:selected .item-box {
 }
 
 .item-text {
-  font-family: "Newsreader", serif;
+  font-family: "Geist", sans-serif;
   font-size: 16px;
 }
 
 .item-subtext {
-  font-family: "Space Mono", monospace;
+  font-family: "Geist Mono", monospace;
   letter-spacing: 0.04em;
 }
 
@@ -61,7 +61,7 @@ row:selected .item-box {
 }
 
 .keybind-label {
-  font-family: "Space Mono", monospace;
+  font-family: "Geist Mono", monospace;
   padding: 2px 6px;
   border-radius: 6px;
 }

@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell.Services.UPower
 
 Chip {
+  numeric: true
   readonly property var dev: UPower.displayDevice
   readonly property real p: dev.percentage <= 1 ? dev.percentage * 100 : dev.percentage
   readonly property bool charging: dev.state === UPowerDeviceState.Charging

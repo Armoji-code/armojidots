@@ -8,6 +8,7 @@ Chip {
   text: Qt.formatDateTime(clk.date, alt ? "HH:mm:ss  yyyy-MMMM-dd" : "HH:mm:ss  yyyy-MM-dd")
   fg: Theme.col("clock", "accent")
   fontSize: Theme.n("clockSize", Theme.fontSize)
+  fontFamily: Theme.n("clockFont", Theme.font)   // nothingos: dot-matrix accent
   onClicked: alt = !alt
   tip: cal(clk.date)
 

@@ -3,6 +3,7 @@ import Quickshell
 import Quickshell.Services.Pipewire
 
 Chip {
+  numeric: true
   readonly property var sink: Pipewire.defaultAudioSink
   readonly property real v: sink?.audio?.volume ?? 0
   PwObjectTracker { objects: [sink] }

@@ -69,7 +69,7 @@ Item {
         Behavior on f { NumberAnimation { duration: Theme.animMs; easing.type: Easing.OutCubic } }
         onFChanged: if (leaving && f === 0) Qt.callLater(wsr.drop, name)
         onActChanged: if (act) hl.target = d
-        TextMetrics { id: tm; text: wsr.label(d.name); font.family: Theme.font; font.pixelSize: Theme.fontSize; font.letterSpacing: Theme.ls(Theme.fontSize) }
+        TextMetrics { id: tm; text: wsr.label(d.name); font.family: Theme.n("numFont", Theme.font); font.pixelSize: Theme.n("wsSize", Theme.fontSize); font.letterSpacing: Theme.ls(Theme.fontSize) }
         readonly property real fullW: Math.max(Theme.iconRound ? Theme.chipHeight : 0,
                                                tm.advanceWidth + 2 * (Theme.iconRound ? 2 : 7))
         readonly property real btnWidth: fullW * f
@@ -119,15 +119,19 @@ Item {
         width: bg ? bg.width : 0
         height: Theme.chipHeight
         Text {
-          x: ((l.bg ? l.bg.btnWidth : 0) - width) / 2
-          anchors.verticalCenter: parent.verticalCenter
+          id: num
+          // centred on the visible glyph, not the font's line box (the
+          // dot-matrix font sits low and off-centre otherwise)
+          TextMetrics { id: nm; font: num.font; text: num.text }
+          x: Math.round((l.bg ? l.bg.btnWidth : 0) / 2 - (nm.tightBoundingRect.x + nm.tightBoundingRect.width / 2))
+          y: Math.round(l.height / 2 - (baselineOffset + nm.tightBoundingRect.y + nm.tightBoundingRect.height / 2))
           opacity: l.f
           scale: l.f
           text: wsr.label(l.name)
           color: l.w?.urgent ? Theme.col("wsUrgentFg", "#e06c75")
                : l.bg?.act ? Theme.col("wsActiveFg", "#ffffff") : Theme.col("wsFg", "muted")
-          font.family: Theme.font
-          font.pixelSize: Theme.fontSize
+          font.family: Theme.n("numFont", Theme.font)
+          font.pixelSize: Theme.n("wsSize", Theme.fontSize)
           font.letterSpacing: Theme.ls(Theme.fontSize)
           Behavior on color { ColorAnimation { duration: Theme.animMs } }
         }
