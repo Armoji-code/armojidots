@@ -137,7 +137,7 @@ bars = "▁▂▃▄▅▆▇█"
 for line in sys.stdin:
     vals = [v for v in line.strip().strip(";").split(";") if v != ""]
     print("".join(bars[min(int(v), 7)] for v in vals), flush=True)
-'
+' || exit 0   # reader (bar) gone: python died on a broken pipe, stop respawning
       sleep 2
     done
     ;;
