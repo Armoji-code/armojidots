@@ -32,6 +32,8 @@ MAG_MAX = 1.55            # macOS-style magnification: peak icon scale
 MAG_SIGMA = 58.0          # px falloff of the magnification bump
 MAG_LERP = 0.30           # per-frame easing toward the target scale
 MAG_EXTRA_X = 90          # px of transparent room either side for growth
+ANIM_MS = 180             # reveal/hide slide+fade duration
+ANIM_DY = 24              # px the pill slides up from on reveal
 
 
 def swaymsg(*args):
@@ -112,18 +114,17 @@ def make_icon(name, px):
     img.set_pixel_size(px)
     if name and name.startswith("/") and os.path.exists(name):
         img.set_from_file(name)
-    elif name:
-        # try the app_id/class directly, else a lowercased variant
-        disp = Gdk.Display.get_default()
-        theme = Gtk.IconTheme.get_for_display(disp)
-        if theme.has_icon(name):
-            img.set_from_icon_name(name)
-        elif theme.has_icon(name.lower()):
-            img.set_from_icon_name(name.lower())
-        else:
-            img.set_from_icon_name("application-x-executable")
     else:
-        img.set_from_icon_name("application-x-executable")
+        # try the app_id/class directly, else a lowercased variant
+        theme = Gtk.IconTheme.get_for_display(Gdk.Display.get_default())
+        pick = next((n for n in (name, name and name.lower())
+                     if n and theme.has_icon(n)), "application-x-executable")
+        # resolve the file once at the peak magnified size, then just scale it:
+        # set_from_icon_name re-looks-up per pixel size, and themes ship
+        # different artwork per size, so magnifying swapped the icon
+        img.set_from_paintable(theme.lookup_icon(
+            pick, None, int(math.ceil(ICON * MAG_MAX)), 1,
+            Gtk.TextDirection.NONE, 0))
     return img
 
 
@@ -140,6 +141,10 @@ class Dock(Gtk.Application):
         self._mag_last = None
         self._mag_tick_id = 0
         self._mag_ready = False
+        self._shown = 0.0         # reveal progress, 0 hidden .. 1 shown
+        self._anim_goal = 0.0
+        self._anim_id = 0
+        self._anim_last = None
 
     def do_command_line(self, cmdline):
         self.hold()
@@ -195,6 +200,10 @@ class Dock(Gtk.Application):
         # two layers on a fixed stage: the shelf (constant height, the visible
         # surface) and the icon row that magnifies and may rise above it
         self.stage = Gtk.Fixed()
+        self.stage.add_css_class("dock-stage")
+        self._anim_css = Gtk.CssProvider()
+        self.stage.get_style_context().add_provider(
+            self._anim_css, Gtk.STYLE_PROVIDER_PRIORITY_USER + 2)
         self.shelf = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         self.shelf.add_css_class("pill")
         self.spacer = Gtk.Box()
@@ -218,6 +227,7 @@ class Dock(Gtk.Application):
     # ── reveal / hide ────────────────────────────────────────────────
     def reveal(self):
         if self.dock.get_visible():
+            self._animate(1.0)    # pointer came back mid-hide: reverse
             return
         self.rebuild()
         self.stage.set_opacity(0.0)   # until the magnify layout is measured
@@ -225,9 +235,42 @@ class Dock(Gtk.Application):
         self._mag_schedule_setup()
 
     def hide(self):
-        if self.dock:
+        if self.dock and self.dock.get_visible():
+            self._mag_c = None    # deflate icons while sliding out
+            self._animate(0.0)
+
+    # ── slide/fade animation ─────────────────────────────────────────
+    def _ease(self):
+        return 1.0 - (1.0 - self._shown) ** 3   # ease-out cubic
+
+    def _apply_anim(self):
+        # CSS transform, not Fixed.move: moving children past the stage grows
+        # the surface upward (it's bottom-anchored) and the slide inverts
+        e = self._ease()
+        self.stage.set_opacity(e)
+        self._anim_css.load_from_string(
+            f".dock-stage {{ transform: translateY({(1.0 - e) * ANIM_DY:.2f}px); }}")
+
+    def _animate(self, goal):
+        self._anim_goal = goal
+        if not self._anim_id:
+            self._anim_last = None
+            self._anim_id = self.stage.add_tick_callback(self._anim_tick)
+
+    def _anim_tick(self, _w, clock):
+        now = clock.get_frame_time()
+        step = 0.0 if self._anim_last is None else (now - self._anim_last) / (ANIM_MS * 1000.0)
+        self._anim_last = now
+        g = self._anim_goal
+        self._shown = min(g, self._shown + step) if g > self._shown else max(g, self._shown - step)
+        self._apply_anim()
+        if self._shown != g:
+            return GLib.SOURCE_CONTINUE
+        self._anim_id = 0
+        if g == 0.0:
             self._mag_reset()
             self.dock.set_visible(False)
+        return GLib.SOURCE_REMOVE
 
     def arm_hide(self):
         self.cancel_hide()
@@ -346,7 +389,10 @@ class Dock(Gtk.Application):
         self.rest_row_left = (self.stage_w - sn.width) / 2.0 + self.pad_x
         self._mag_ready = bool(items)
         self._mag_layout()
-        self.stage.set_opacity(1.0)
+        if self._shown == 0.0:
+            self._animate(1.0)    # fresh reveal: slide in
+        else:
+            self._apply_anim()
 
     def _mag_layout(self):
         items = self._mag_items
