@@ -36,6 +36,9 @@ function power(arg) {
 function update(arg) {
   const a = arg.trim().toLowerCase()
   return [["Full System Update", "system-software-update", "foot --app-id=float-tui -e yay -Syu"],
+          // pull the latest armojidots; stowed symlinks pick the new files up
+          // (the shell reloads itself — open sidebar sessions restart)
+          ["Dotfiles", "folder-git", "foot --app-id=float-tui -e sh -c 'cd ~/dotfiles && git pull --ff-only; printf \"\\npress Enter to close\"; read _'"],
           ["Pacman", "system-software-update", "foot --app-id=float-tui -e sudo pacman -Syu"],
           ["AUR (yay)", "system-software-update", "foot --app-id=float-tui -e yay -Sua"],
           ["Kernel", "org.cachyos.KernelManager", "cachyos-kernel-manager"]]

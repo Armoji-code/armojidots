@@ -140,7 +140,7 @@ as you type, with open/close and resize animations.
 | `/set color` | Pick a palette (a style pack may limit the choice) |
 | `/set wallpaper` | Thumbnails of `~/Pictures/Wallpapers`; pick one to apply it |
 | `/power` | Lock / Logout / Suspend / Reboot / Shutdown |
-| `/update` | Full system / pacman / AUR update, kernel manager |
+| `/update` | Full system / pacman / AUR update, **dotfiles** (`git pull` of this repo), kernel manager |
 | `/web <query>` | Web search in the browser |
 | `/keys` | Keybind cheat-sheet |
 | `23*7` | Inline math — Enter copies the result |
