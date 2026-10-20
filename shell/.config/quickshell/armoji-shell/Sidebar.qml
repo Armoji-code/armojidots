@@ -41,7 +41,7 @@ Scope {
 
   IpcHandler {
     target: "sidebar"
-    function toggle(name: string): void { const p = sb.panel(name); if (p) { p.toggle(); if (p.shown) sb.remember(name) } }
+    function toggle(name: string): void { const p = sb.panel(name); if (p) { if (!sb.anyOpen) sb.target = sb.focusedScreen(); p.toggle(); if (p.shown) sb.remember(name) } }
     function sides(): void { sb.panel(sb.last)?.cycle("sides") }
     function mode(): void { sb.panel(sb.last)?.cycle("mode") }
     function size(): void { sb.panel(sb.last)?.cycle("size") }
@@ -53,9 +53,11 @@ Scope {
   // under it redraws. Never unmapped: a remapped Qt layer window isn't drawn
   // until some input arrives.
   readonly property bool anyOpen: term.active || claude.active
+  function focusedScreen() { return Quickshell.screens.find(s => s.name === I3.focusedMonitor?.name) ?? Quickshell.screens[0] }
+  property var target: focusedScreen()   // latched on open, so it doesn't follow focus while shown
   PanelWindow {
     id: win
-    screen: Quickshell.screens.find(s => s.name === I3.focusedMonitor?.name) ?? Quickshell.screens[0]
+    screen: sb.target
     WlrLayershell.namespace: "armoji-sidebar"
     WlrLayershell.layer: WlrLayer.Top
     // SwayFX drops focus from any non-exclusive layer on every layer
@@ -80,8 +82,8 @@ Scope {
     // usable area = screen minus the bar's reserved strip (Bar.qml: 8px top
     // margin + its height); the real window size takes over once it's full
     readonly property real barZone: 8 + Theme.chipHeight + 2 * (Theme.groupGap + Theme.line("border")) + 6
-    readonly property real areaW: sb.anyOpen && width > 1 ? width : (screen?.width ?? 1920)
-    readonly property real areaH: sb.anyOpen && height > 1 ? height : (screen?.height ?? 1080) - barZone
+    readonly property real areaW: sb.anyOpen && width > 1 ? width : screen.width
+    readonly property real areaH: sb.anyOpen && height > 1 ? height : screen.height - barZone
 
     SidebarPanel { id: term; name: "term"; program: "env"; args: ["SIDEBAR=1", "fish"]; stateDir: sb.stateDir; areaW: win.areaW; areaH: win.areaH }
     SidebarPanel { id: claude; name: "claude"; program: "claude"; args: []; stateDir: sb.stateDir; areaW: win.areaW; areaH: win.areaH }

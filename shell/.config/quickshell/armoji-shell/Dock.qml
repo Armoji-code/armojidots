@@ -3,6 +3,7 @@
 // bottom edge reveals it; it hides 1s after the pointer leaves. Windows are
 // grouped per workspace into sub-pills, sidebars (app_id sidebar-*) get their
 // own pill after a divider. Click focuses the window (sway jumps to it).
+// One hotspot+dock pair per screen, only the revealed screen's dock shows.
 // Both surfaces stay mapped; the dock is click-through while hidden.
 import QtQuick
 import Quickshell
@@ -22,9 +23,10 @@ Scope {
   readonly property real headroom: Math.ceil(icon * (magMax - 1)) + 2
 
   property bool shown: false
+  property string on: ""                       // screen the dock is revealed on
   property var groups: []                      // [{ sidebar, apps: [{id, appId, title}] }]
 
-  function reveal() { hideT.stop(); if (!shown) { tree.running = true; shown = true } }
+  function reveal(screen) { hideT.stop(); if (!shown) { on = screen; tree.running = true; shown = true } }
   function armHide() { hideT.restart() }
   Timer { id: hideT; interval: 1000; onTriggered: root.shown = false }
 
@@ -64,7 +66,7 @@ Scope {
   }
 
   Variants {
-    model: Quickshell.screens.filter(s => s.name === "eDP-1")
+    model: Quickshell.screens
 
     Scope {
       required property var modelData
@@ -81,7 +83,7 @@ Scope {
         MouseArea {
           anchors.fill: parent
           hoverEnabled: true
-          onEntered: root.reveal()
+          onEntered: root.reveal(modelData.name)
           onExited: root.armHide()
         }
       }
@@ -97,9 +99,10 @@ Scope {
         implicitHeight: root.shelfH + root.headroom
         color: "transparent"
         // input only where the dock is, and nowhere while hidden
-        mask: Region { item: root.shown ? hit : null }
+        readonly property bool here: root.shown && root.on === modelData.name
+        mask: Region { item: win.here ? hit : null }
 
-        property real t: root.shown ? 1 : 0
+        property real t: win.here ? 1 : 0
         Behavior on t { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
 
         // pointer x in row coordinates, or -1e6 when away (no magnification)
@@ -110,7 +113,7 @@ Scope {
         // delivers hover to the hovered item's ancestors)
         HoverHandler {
           onHoveredChanged: {
-            if (hovered) root.reveal()
+            if (hovered) root.reveal(modelData.name)
             else { win.px = -1e6; root.armHide() }   // icons ease back to rest
           }
           onPointChanged: win.px = hovered ? point.position.x - shelf.x - row.x : -1e6

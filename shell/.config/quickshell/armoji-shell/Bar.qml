@@ -1,12 +1,12 @@
 // ── armojidots · bar ────────────────────────────────────────────────
-// clock+media | workspaces | status. Laptop panel only — an external
-// display just mirrors it (sway/scripts/mirror.sh).
+// clock+media | workspaces | status. One per screen.
 import QtQuick
 import Quickshell
+import Quickshell.Services.UPower
 import Quickshell.Wayland
 
 Variants {
-  model: Quickshell.screens.filter(s => s.name === "eDP-1")
+  model: Quickshell.screens
 
   PanelWindow {
     required property var modelData
@@ -38,7 +38,8 @@ Variants {
       Volume {}
       Backlight {}
       Battery {}
-      ScriptChip {
+      ScriptChip {   // laptops only
+        visible: UPower.displayDevice.isLaptopBattery
         script: "power-profile.sh"
         colors: ({ "power-saver": Theme.col("powerSaver", "#98c379"),
                    "balanced": Theme.col("powerBalanced", "fg"),

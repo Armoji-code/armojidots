@@ -63,6 +63,8 @@ apply() {
   set -- $(printf '%s' "$json" | jq -r --arg i "$INTERNAL" \
     '.[] | select(.name == $i and .active) | "\(.current_mode.width) \(.current_mode.height) \(.rect.x)"')
   iw=$1 ih=$2 ix=$3
+  # no panel at all (desktop): leave the layout to sway/outputs
+  printf '%s' "$json" | jq -e --arg i "$INTERNAL" 'any(.[]; .name == $i)' >/dev/null || return 0
   exts=$(printf '%s' "$json" | jq -r --arg i "$INTERNAL" '.[] | select(.name != $i) | .name')
 
   if [ -z "$iw" ]; then
