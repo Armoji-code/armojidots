@@ -13,8 +13,9 @@
 // Terminal: QMLTermWidget (pacman qmltermwidget). Its colors come from the
 // "armoji" scheme, which theme.sh writes to ~/.config/armoji-shell/
 // terminal.colorscheme (symlinked into the plugin's color-schemes dir).
-// The plugin caches schemes, so a new palette reaches the terminal text on
-// the next shell restart; the glass behind it follows live.
+// The plugin reads schemes once per process, so the 16 terminal colors catch
+// up on the next shell restart; the glass, the starship prompt and fish's
+// syntax colors follow a palette change live (theme.sh sets them as hexes).
 //
 // Note: the sessions live in this shell process — restarting/reloading the
 // shell (e.g. editing these QML files) ends them.

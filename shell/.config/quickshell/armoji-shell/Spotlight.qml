@@ -1,7 +1,11 @@
 // ── armojidots · spotlight ──────────────────────────────────────────
 // Launcher: a search capsule plus a results panel under it. Empty query =
 // 5×2 grid of top apps; typing = list (elephant apps + calc); "/" = our own
-// commands (Commands.js). Toggle: `qs -c armoji-shell ipc call spotlight toggle`.
+// commands (Commands.js): each is a mouse page (Page*.qml) the box fits to —
+// "/" or the cog = the settings hub, /wifi /colors /power … (prefixes work:
+// /po) — and an argument after it is a quick keyboard action for Enter
+// (/colors ruby). Only /web is a list.
+// Toggle: `qs -c armoji-shell ipc call spotlight toggle`.
 //
 // One full-screen transparent overlay that only exists while open: both pills
 // are drawn in it (SwayFX blur_ignore_transparent blurs just behind them),
@@ -26,26 +30,64 @@ Scope {
   property var items: []
   property string mode: "grid"         // grid (empty query) | list
   property int sel: 0
-  property var ctx: ({ home: Quickshell.env("HOME"), style: "default", packs: {}, wallpapers: [] })
+  property var ctx: ({ home: Quickshell.env("HOME"), style: "material", packs: {}, wallpapers: [] })
+
+  // page in the box: "" (results) | hub | wifi | bluetooth | monitors | style |
+  // colors | wallpaper | power | keys | updates | term:<cmd>
+  property string page: ""
+  property string termTitle: ""
+  property var pageObj: null           // the loaded Page*.qml
+  readonly property bool isTerm: page.startsWith("term:")
+  readonly property bool busy: isTerm && (pageObj?.busy ?? false)
+  readonly property var titles: ({ hub: "Settings", wifi: "Wi-Fi", bluetooth: "Bluetooth", monitors: "Monitors",
+    style: "Style", colors: "Colors", wallpaper: "Wallpaper", power: "Power", keys: "Shortcuts",
+    updates: "Updates" })
+  readonly property string pageTitle: isTerm ? termTitle : titles[page] ?? ""
+  // Enter on a page runs the typed argument (/colors ruby) — the first
+  // quick-list item, which stays computed but hidden
+  readonly property var quick: page !== "" && !isTerm && Cmd.quickArg(query) && items[0]?.kind === "cmd" ? items[0] : null
+
+  function openPage(name, title) {
+    if (name.startsWith("term:")) termTitle = title ?? "Update"
+    pageObj = null; page = name
+  }
+  // Esc / ‹ : page → its parent (hub, or Updates for a terminal) → results
+  function back() {
+    if (busy) return
+    if (page === "") { close(); return }
+    const typed = Cmd.pageFor(query)
+    if (isTerm) openPage("updates")
+    else if (page !== "hub" && page !== typed) openPage("hub")
+    else { page = ""; if (typed !== "") { query = ""; run("") } }
+  }
 
   IpcHandler {
     target: "spotlight"
     function toggle(): void { sp.shown ? sp.close() : sp.show() }
-    // open with a query typed in (scripts, testing): `… ipc call spotlight search "/set"`
-    function search(q: string): void { if (!sp.shown) sp.show(); sp.query = q; sp.run(q) }
+    // open with a query typed in (scripts, testing): `… ipc call spotlight search "/wifi"`
+    function search(q: string): void { if (!sp.shown) sp.show(); sp.query = q; sp.page = Cmd.pageFor(q); sp.run(q) }
+    // press Enter / Esc (testing without a keyboard)
+    function enter(): void { sp.activate(sp.sel) }
+    function goBack(): void { sp.back() }
+    // open a page by name (bar chips): `… ipc call spotlight page wifi`
+    function page(name: string): void { if (!sp.shown) sp.show(); sp.openPage(name) }
   }
 
   function show() {
     closeT.stop()
+    page = ""; pageObj = null
     query = ""; items = []; sel = 0; mode = "grid"
     ctxProc.running = true
     run("")
     open = true; shown = true
   }
-  function close() { shown = false; closeT.restart() }
+  // put text in the search pill as if typed (hub's Web tile → "/web ")
+  function typeQuery(q) { query = q; page = Cmd.pageFor(q); run(q) }
+  function refreshCtx() { ctxProc.running = true }   // after a style change
+  function close() { if (busy) return; shown = false; closeT.restart() }
   Timer { id: closeT; interval: 130; onTriggered: sp.open = false }
 
-  // style, style packs and wallpapers for the /set commands (re-read on open)
+  // style, style packs and wallpapers for the / commands (re-read on open)
   Process {
     id: ctxProc
     command: ["sh", "-c", 'cat ~/.local/state/armojidots/style 2>/dev/null; echo "\n@@@";'
@@ -59,7 +101,7 @@ Scope {
           const nl = blk.indexOf("\n")
           packs[blk.slice(0, nl < 0 ? undefined : nl).trim()] = Cmd.packConf(nl < 0 ? "" : blk.slice(nl + 1))
         }
-        sp.ctx = { home: sp.ctx.home, style: (parts[0] || "").trim() || "default", packs: packs,
+        sp.ctx = { home: sp.ctx.home, style: (parts[0] || "").trim() || "material", packs: packs,
                    wallpapers: (parts[2] || "").split("\n").filter(s => s) }
       }
     }
@@ -93,9 +135,11 @@ Scope {
   function setItems(list, m) { items = list; mode = m; sel = 0 }
 
   function activate(i) {
-    const it = items[i]
+    if (page !== "" && !quick) return
+    const it = quick ?? items[i]
     if (!it || it.kind === "noop") return
-    if (it.kind === "fill") { query = it.value; run(it.value); return }
+    if (it.kind === "page") { openPage(it.value, it.text); return }
+    if (it.kind === "fill") { query = it.value; page = Cmd.pageFor(it.value); run(it.value); return }
     if (it.kind === "calc") Quickshell.execDetached(["wl-copy", it.value])
     else if (it.kind === "cmd") Quickshell.execDetached(["sh", "-c", it.value])
     else Quickshell.execDetached(["gtk-launch", it.value])
@@ -130,7 +174,7 @@ Scope {
         NumberAnimation { duration: sp.shown ? 190 : 110; easing.type: sp.shown ? Easing.OutCubic : Easing.InCubic }
       }
 
-      MouseArea { anchors.fill: parent; onClicked: sp.close() }   // click outside = close
+      MouseArea { anchors.fill: parent; onClicked: sp.close() }   // click outside = close (not while busy)
 
       // ── search capsule ──
       Rectangle {
@@ -157,10 +201,10 @@ Scope {
         }
         TextInput {
           id: input
-          anchors { left: glass.right; leftMargin: 10; right: parent.right; rightMargin: Theme.n("spSearchPad", 18); verticalCenter: parent.verticalCenter }
+          anchors { left: glass.right; leftMargin: 10; right: cog.left; rightMargin: 10; verticalCenter: parent.verticalCenter }
           focus: true
           text: sp.query
-          onTextChanged: if (text !== sp.query) { sp.query = text; sp.run(text) }
+          onTextChanged: if (text !== sp.query && !sp.busy) { sp.query = text; sp.page = Cmd.pageFor(text); sp.run(text) }
           color: Theme.fg
           selectionColor: Qt.alpha(Theme.accent, 0.4)
           cursorDelegate: Rectangle { width: 2; color: Theme.accent }
@@ -169,13 +213,14 @@ Scope {
           clip: true
           Text {
             visible: !input.text
-            text: "Search"
+            text: sp.page !== "" ? sp.pageTitle : "Search"
+
             color: Theme.muted
             font: input.font
           }
           Keys.onPressed: e => {
             const grid = sp.mode === "grid"
-            if (e.key === Qt.Key_Escape) sp.close()
+            if (e.key === Qt.Key_Escape) sp.back()
             else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) sp.activate(sp.sel)
             else if (e.key === Qt.Key_Down) sp.move(grid ? sp.cols : 1)
             else if (e.key === Qt.Key_Up) sp.move(grid ? -sp.cols : -1)
@@ -185,6 +230,18 @@ Scope {
             e.accepted = true
           }
         }
+        // settings cog: the mouse way into the pages
+        Text {
+          id: cog
+          anchors { right: parent.right; rightMargin: Theme.n("spSearchPad", 18) - 4; verticalCenter: parent.verticalCenter }
+          text: "󰒓"
+          color: cogMa.containsMouse || sp.page === "hub" ? Theme.accent : Theme.muted
+          font.family: "JetBrainsMono Nerd Font"
+          font.pixelSize: 19
+          Behavior on color { ColorAnimation { duration: 120 } }
+          MouseArea { id: cogMa; anchors.fill: parent; anchors.margins: -6; hoverEnabled: true
+                      onClicked: sp.page === "hub" ? sp.back() : sp.openPage("hub") }
+        }
         // a "fill" item rewrites the query: keep the caret at the end
         Connections { target: sp; function onQueryChanged() { if (input.text === sp.query) input.cursorPosition = input.text.length } }
       }
@@ -193,14 +250,17 @@ Scope {
       Rectangle {
         id: panel
         readonly property real pad: Theme.n("spContentPad", 10)
-        readonly property real target: sp.items.length === 0 ? 0
+        // a page sizes the box to itself (header + its implicit size)
+        readonly property real target: sp.page !== "" ? header.height + 10 + pageLoader.height + 2 * pad
+          : sp.items.length === 0 ? 0
           : sp.mode === "grid" ? gridView.implicitHeight + 2 * pad
           : Math.min(list.contentHeight, 360) + 2 * pad
-        x: search.x
+        x: Math.round((parent.width - width) / 2)
         y: search.y + sp.searchH + 12 - (1 - win.t) * 10
-        width: sp.w
+        width: sp.page !== "" ? Math.max(sp.w, pageLoader.width + 2 * pad) : sp.w
         height: target
-        Behavior on height { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+        Behavior on width { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
+        Behavior on height { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
         visible: height > 0.5
         radius: Theme.n("spContentRadius", 16)
         color: Theme.col("spBg", "bgPop")
@@ -215,12 +275,12 @@ Scope {
           id: content
           anchors.fill: parent
           anchors.margins: panel.pad
-          Connections { target: sp; function onModeChanged() { fade.restart() } }
+          Connections { target: sp; function onModeChanged() { fade.restart() } function onPageChanged() { fade.restart() } }
           NumberAnimation { id: fade; target: content; property: "opacity"; from: 0; to: 1; duration: 150 }
 
           Grid {
             id: gridView
-            visible: sp.mode === "grid"
+            visible: sp.mode === "grid" && sp.page === ""
             columns: sp.cols
             spacing: 6
             Repeater {
@@ -232,8 +292,8 @@ Scope {
                 readonly property bool on: sp.sel === index
                 width: (sp.w - 2 * panel.pad - (sp.cols - 1) * gridView.spacing) / sp.cols
                 height: 44 + 6 + 16 + 20
-                radius: Theme.n("spCellRadius", 12)
-                color: on ? Qt.alpha(Theme.accent, Theme.n("spSelAlpha", 0.22)) : Theme.col("spCellBg", "transparent")
+                radius: Theme.cardRadius
+                color: on ? Theme.col("spSel", "accent@" + Theme.n("spSelAlpha", 0.22)) : Theme.col("spCellBg", "transparent")
                 border.width: 1
                 border.color: on ? Qt.alpha(Theme.accent, Theme.n("spSelBorderAlpha", 0.35)) : "transparent"
                 Behavior on color { ColorAnimation { duration: 140 } }
@@ -252,7 +312,7 @@ Scope {
                     width: Math.min(implicitWidth, cell.width - 12)
                     elide: Text.ElideRight
                     text: cell.modelData.text
-                    color: cell.on ? Theme.fg : Theme.muted
+                    color: cell.on ? Theme.col("spSelFg", "fg") : Theme.muted
                     font.family: Theme.n("spLabelFont", Theme.font)
                     font.pixelSize: Theme.n("spLabelSize", 12)
                     font.letterSpacing: Theme.ls(Theme.n("spLabelSize", 12), "spLabelSpacing")
@@ -268,9 +328,57 @@ Scope {
             }
           }
 
+          // ── page: header (‹ title) + the page itself ──
+          Item {
+            id: pageArea
+            anchors.fill: parent
+            visible: sp.page !== ""
+            Row {
+              id: header
+              spacing: 8
+              height: 30
+              Rectangle {
+                width: 30; height: 30; radius: Theme.ctl(30)
+                color: backMa.containsMouse ? Theme.chipHover : Theme.chipBg
+                opacity: sp.busy ? 0.4 : 1
+                Text { anchors.centerIn: parent; text: "󰅁"; color: Theme.fg; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 16 }
+                MouseArea { id: backMa; anchors.fill: parent; hoverEnabled: true; onClicked: sp.back() }
+              }
+              UiLabel { anchors.verticalCenter: parent.verticalCenter; text: sp.pageTitle; font.pixelSize: 16 }
+            }
+            UiLabel {
+              anchors { right: parent.right; rightMargin: 4; verticalCenter: header.verticalCenter }
+              visible: sp.quick !== null
+              text: "↵  " + (sp.quick?.text ?? "")
+              color: Theme.accent
+            }
+            Loader {
+              id: pageLoader
+              y: header.height + 10
+              active: sp.page !== ""
+              sourceComponent: ({ hub: hubC, wifi: wifiC, bluetooth: btC, monitors: monC, style: styleC,
+                                  colors: colorsC, wallpaper: wallC, power: powerC, keys: keysC,
+                                  updates: updC })[sp.page] ?? (sp.isTerm ? termC : null)
+              onLoaded: sp.pageObj = item
+              // back to results: the search pill takes the keys again
+              onActiveChanged: if (!active) input.forceActiveFocus()
+            }
+          }
+          Component { id: hubC; PageHub { host: sp } }
+          Component { id: wifiC; PageWifi { host: sp } }
+          Component { id: btC; PageBluetooth { host: sp } }
+          Component { id: monC; PageMonitors { host: sp } }
+          Component { id: styleC; PageStyle { host: sp } }
+          Component { id: colorsC; PageColors { host: sp } }
+          Component { id: wallC; PageWallpaper { host: sp } }
+          Component { id: powerC; PagePower { host: sp } }
+          Component { id: keysC; PageKeys { host: sp } }
+          Component { id: updC; PageUpdates { host: sp } }
+          Component { id: termC; SpotTerm { host: sp; cmd: sp.page.slice(5) } }
+
           ListView {
             id: list
-            visible: sp.mode === "list"
+            visible: sp.mode === "list" && sp.page === ""
             anchors.fill: parent
             interactive: contentHeight > height
             boundsBehavior: Flickable.StopAtBounds
@@ -278,56 +386,17 @@ Scope {
             currentIndex: sp.sel
             highlightFollowsCurrentItem: false
             onCurrentIndexChanged: positionViewAtIndex(currentIndex, ListView.Contain)
-            delegate: Rectangle {
-              id: row
+            delegate: SpotRow {
               required property var modelData
               required property int index
-              readonly property bool on: sp.sel === index
-              readonly property real ic: modelData.iconPx || 30
               width: ListView.view.width
-              height: ic + 16
-              radius: Theme.n("spRowRadius", 12)
-              color: on ? Qt.alpha(Theme.accent, Theme.n("spSelAlpha", 0.22)) : "transparent"
-              border.width: 1
-              border.color: on ? Qt.alpha(Theme.accent, Theme.n("spSelBorderAlpha", 0.35)) : "transparent"
-              Behavior on color { ColorAnimation { duration: 140 } }
-              Image {
-                id: rowIcon
-                x: 12
-                anchors.verticalCenter: parent.verticalCenter
-                width: row.ic; height: row.ic
-                sourceSize: Qt.size(row.ic * 2, row.ic * 2)
-                fillMode: Image.PreserveAspectCrop
-                source: sp.iconSrc(row.modelData.icon)
-                asynchronous: true
-              }
-              Column {
-                anchors { left: rowIcon.right; leftMargin: 12; right: parent.right; rightMargin: 12; verticalCenter: parent.verticalCenter }
-                Text {
-                  width: parent.width
-                  elide: Text.ElideRight
-                  text: row.modelData.text
-                  color: Theme.fg
-                  font.family: Theme.n("spTitleFont", Theme.font)
-                  font.pixelSize: Theme.n("spTitleSize", 15)
-                }
-                Text {
-                  visible: text !== ""
-                  width: parent.width
-                  elide: Text.ElideRight
-                  text: row.modelData.subtext
-                  color: Theme.muted
-                  font.family: Theme.n("spSubFont", Theme.font)
-                  font.pixelSize: Theme.n("spSubSize", 12)
-                  font.letterSpacing: Theme.ls(Theme.n("spSubSize", 12), "spSubSpacing")
-                }
-              }
-              MouseArea {
-                anchors.fill: parent
-                hoverEnabled: true
-                onEntered: sp.sel = row.index
-                onClicked: sp.activate(row.index)
-              }
+              on: sp.sel === index
+              ic: modelData.iconPx || 30
+              icon: sp.iconSrc(modelData.icon)
+              title: modelData.text
+              sub: modelData.subtext
+              onHovered: sp.sel = index
+              onClicked: sp.activate(index)
             }
           }
         }

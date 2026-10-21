@@ -4,7 +4,7 @@
 #   theme.sh apply <palette>   palettes: wallpaper (extracted from current
 #                              wallpaper), ruby, orange, dandelion, emerald,
 #                              cobalt, bubblegum, purpur, b&w
-#   theme.sh pick              walker picker (used by /set color)
+#   theme.sh pick              walker picker (fallback; spotlight has /colors)
 #   theme.sh startup           re-apply saved palette + style (for autostart)
 #   theme.sh style <pack>      switch style pack (shape/spacing/fonts) from
 #                              ~/.config/armoji-styles/<pack>/ — independent of
@@ -105,6 +105,7 @@ resolve() {
     blue)      seed="#5B9BF6" ;;
     yellow)    seed="#D4A843" ;;
     wallpaper) seed=$(extract_from_wallpaper | cut -d' ' -f1) ;;
+    \#[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]) seed="$1" ;;  # custom (spotlight color picker)
     *) return 1 ;;
   esac
   TONE=$(cat "$STATE_DIR/tone" 2>/dev/null || echo heavy)
@@ -129,13 +130,20 @@ resolve() {
       ALPHA_BAR=0.5 ALPHA_POP=0.55 ALPHA_CC=0.65 ALPHA_TERM=0.75 ALPHA_APP=0.78
     fi
   fi
+  # per-pack surface alphas (pack.conf alpha_bar/pop/cc/term/app) win over
+  # the above — how tinted packs get frosted glass
+  for _k in bar pop cc term app; do
+    _v=$(pack_flag "$(current_style)" "alpha_$_k")
+    # (an if, not `&&`: a false test would end resolve() with status 1)
+    if [ -n "$_v" ]; then eval "ALPHA_$(printf %s "$_k" | tr a-z A-Z)=\$_v"; fi
+  done
 }
 
 # ── style packs ──────────────────────────────────────
 # A pack is a dir of per-app structural CSS (no colors). Each app's style.css
 # ends with `@import "style-tokens.css"`, so copying the pack file there is
 # the whole switch.
-current_style() { cat "$STATE_DIR/style" 2>/dev/null || echo default; }
+current_style() { cat "$STATE_DIR/style" 2>/dev/null || echo material; }
 
 list_styles() {
   for d in "$STYLES_DIR"/*/; do [ -d "$d" ] && basename "$d"; done
@@ -300,6 +308,29 @@ for i in range(8):
     sec("Color%d" % i, c["regular%d" % i]); sec("Color%dIntense" % i, c["bright%d" % i])
 open(sys.argv[2], "w").write("\n".join(out))
 PYEOF
+
+  # ── live terminal colors: the sidebar terminals can't reload their scheme
+  # until the shell restarts, so the prompt (starship re-reads its config every
+  # prompt) and fish's syntax colors (universal vars, seen by every running
+  # fish) carry the palette as exact hexes instead
+  sed -e "/^\[palettes.armoji\]/,\$d" "$HOME/.config/starship.toml" > "$HOME/.config/armoji-shell/starship.toml"
+  cat >> "$HOME/.config/armoji-shell/starship.toml" <<EOF
+[palettes.armoji]
+dir = "$R6"
+branch = "$R5"
+status = "$R3"
+ok = "$R2"
+err = "$R1"
+dim = "$MUTED"
+EOF
+  # STARSHIP_CONFIG as an exported universal: running fish shells get it too
+  fish -c "set -Ux STARSHIP_CONFIG $HOME/.config/armoji-shell/starship.toml
+    set -U fish_color_command ${R4#\#}; set -U fish_color_keyword ${R5#\#}
+    set -U fish_color_param ${R6#\#}; set -U fish_color_option ${R6#\#}
+    set -U fish_color_quote ${R3#\#}; set -U fish_color_escape ${B6#\#}
+    set -U fish_color_redirection ${R5#\#}; set -U fish_color_operator ${R5#\#}
+    set -U fish_color_end ${R2#\#}; set -U fish_color_error ${R1#\#}
+    set -U fish_color_comment ${MUTED#\#}; set -U fish_color_autosuggestion ${MUTED#\#}" 2>/dev/null
 
   # ── kitty (sidebar terminals — cursor-trail animation foot doesn't have) ──
   mkdir -p "$HOME/.config/kitty"

@@ -22,6 +22,9 @@ case "$1" in
     swaymsg input type:keyboard xkb_switch_layout next >/dev/null
     ;;
   watch|"")
+    # the shell stops us with SIGTERM (setpriv pdeathsig): take the pipeline
+    # children with us, or every shell restart leaves a swaymsg subscriber behind
+    trap 'pkill -P $$; exit 0' TERM INT EXIT
     # sway reports several "keyboard"-type input devices on this laptop (the
     # real keyboard plus virtual power/sleep/video-bus buttons) and the same
     # xkb config applies to all of them — pin to just the first one so we

@@ -18,10 +18,17 @@ Singleton {
   readonly property color bg: Qt.alpha(c.bg ?? "#121212", c.bgAlpha ?? 0.55)
   readonly property color bgPop: Qt.alpha(c.bg ?? "#121212", c.bgPopAlpha ?? 0.58)  // dock/popups
 
-  // style token: a color name ("accent", "fg", "muted", "accentDim") or literal
+  // style token: a color name ("accent", "fg", "muted", "accentDim", "bg",
+  // "bgPop", "onAccent") or literal, optionally "<color>@<alpha>" ("accent@0.16")
   function col(key, fallback) {
-    const v = s[key] ?? fallback
-    return v === "accent" ? accent : v === "accentDim" ? accentDim
+    const v = String(s[key] ?? fallback)
+    const at = v.indexOf("@")
+    return at < 0 ? named(v) : Qt.alpha(named(v.slice(0, at)), Number(v.slice(at + 1)))
+  }
+  // readable text on an accent fill (black or white by luminance)
+  readonly property color onAccent: 0.299 * accent.r + 0.587 * accent.g + 0.114 * accent.b > 0.55 ? "#111111" : "#ffffff"
+  function named(v) {
+    return v === "onAccent" ? onAccent : v === "accent" ? accent : v === "accentDim" ? accentDim
          : v === "fg" ? fg : v === "muted" ? muted : v === "bg" ? bg : v === "bgPop" ? bgPop : v
   }
   function n(key, fallback) { return s[key] ?? fallback }
@@ -45,6 +52,15 @@ Singleton {
   readonly property color border: col("border", "transparent")
   readonly property color chipBg: col("chipBg", "#12ffffff")
   readonly property color chipHover: col("chipHover", "#24ffffff")
+
+  // shape of Spotlight's page controls: pills, or `ctlRadius` corners
+  readonly property bool ctlPill: n("ctlPill", true)
+  readonly property real ctlRadius: n("ctlRadius", 10)
+  function ctl(h) { return ctlPill ? h / 2 : Math.min(ctlRadius, h / 2) }
+  // concentric corners: a shape inset by `pad` inside one with radius `outer`
+  function inner(outer, pad) { return Math.max(0, outer - pad) }
+  // radius of cards/rows inside the Spotlight box (concentric with it)
+  readonly property real cardRadius: inner(n("spContentRadius", 16), n("spContentPad", 10))
 
   // one knob for every animation in the bar
   readonly property int animMs: 220

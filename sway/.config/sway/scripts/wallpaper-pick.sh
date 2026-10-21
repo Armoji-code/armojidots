@@ -2,7 +2,7 @@
 # Set the wallpaper and persist it via the `current` symlink that swaybg and
 # theme.sh both read. Wallpapers live in ~/Pictures/Wallpapers.
 #   wallpaper-pick.sh "<path>"   set that image directly
-#                                (used by spotlight's /set wallpaper thumbnails)
+#                                (used by spotlight's /wallpaper page)
 #   wallpaper-pick.sh            no arg → dmenu picker (fallback)
 WALLDIR="$HOME/Pictures/Wallpapers"
 LINK="$HOME/dotfiles/wallpapers/current"

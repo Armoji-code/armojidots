@@ -8,5 +8,5 @@ Chip {
   text: !ad?.enabled ? "󰂲" : n ? "󰂱 " + n : "󰂯"
   icon: n === 0
   tip: !ad ? "" : [ad.name].concat(ad.devices.values.filter(d => d.connected).map(d => d.name)).join("<br>")
-  onClicked: Quickshell.execDetached(["foot", "--app-id=float-tui", "-e", "bluetuith"])
+  onClicked: Quickshell.execDetached(["qs", "-c", "armoji-shell", "ipc", "call", "spotlight", "page", "bluetooth"])
 }

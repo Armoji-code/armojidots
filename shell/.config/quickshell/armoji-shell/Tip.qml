@@ -24,7 +24,7 @@ PopupWindow {
     opacity: pw.t
     implicitWidth: label.implicitWidth + 20
     implicitHeight: label.implicitHeight + 12
-    radius: Math.min(Theme.chipRadius + 6, 14)
+    radius: Math.min(Theme.n("tipRadius", Theme.chipRadius + 6), 14)
     color: Qt.alpha(Theme.bg, 0.94)
     border.width: Theme.border.a > 0 ? 1 : 0
     border.color: Theme.border

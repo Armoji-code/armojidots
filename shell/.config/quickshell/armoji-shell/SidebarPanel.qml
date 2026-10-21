@@ -16,7 +16,7 @@ Item {
   required property real areaW           // usable area (below the bar)
   required property real areaH
   readonly property alias glass: glass
-  readonly property int gap: 12
+  readonly property int gap: Theme.n("sidebarGap", 12)
   readonly property int crossTB: 920     // width of the slim top/bottom strip
   property bool shown: false
   property bool started: false           // program starts on first show, at real size
@@ -68,7 +68,7 @@ Item {
     height: p.th
     opacity: p.t
     visible: p.active
-    radius: 16
+    radius: Theme.n("sidebarRadius", 16)
     clip: true
     color: Theme.bgPop             // same frosted glass as the other popups
     border.width: Theme.line("border")

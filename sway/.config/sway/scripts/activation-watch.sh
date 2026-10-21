@@ -17,7 +17,13 @@ is_excepted() {
   esac
 }
 
-swaymsg -t subscribe -m '["window"]' | python3 -u -c '
+# one instance (exec_always re-runs this on every reload); if the IPC
+# subscription ever drops, subscribe again instead of silently dying
+exec 9> "${XDG_RUNTIME_DIR:-/tmp}/activation-watch.lock"
+flock -n 9 || exit 0
+
+while :; do
+swaymsg -t subscribe -m '["window"]' 9>&- | python3 -u -c '
 import sys, json
 for line in sys.stdin:
     try:
@@ -29,9 +35,11 @@ for line in sys.stdin:
     c = e.get("container", {})
     if not c.get("urgent"):
         continue
-    print(f"{c.get(\"id\")}\t{c.get(\"app_id\") or \"\"}", flush=True)
+    print(str(c.get("id")) + "\t" + (c.get("app_id") or ""), flush=True)
 ' | while IFS="$(printf '\t')" read -r id app_id; do
   [ -z "$id" ] && continue
   is_excepted "$app_id" && continue
   swaymsg "[con_id=$id] focus" >/dev/null
+done
+sleep 1
 done

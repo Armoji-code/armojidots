@@ -11,12 +11,16 @@
 #   mirror.sh apply    reconcile outputs + mirrors (idempotent; run on hotplug)
 #   mirror.sh status   what it sees / is doing
 #
+# Extend instead: `echo extend > ~/.local/state/armojidots/display-mode`
+# (spotlight's Monitors page does this) — then the layout is yours.
+#
 # Test hooks: MIRROR_TEST_JSON=<file> reads `swaymsg -t get_outputs` from a
 # file, MIRROR_DRY_RUN=1 prints the commands instead of running them.
 
 INTERNAL=eDP-1
 GAP=8000      # layout distance panel -> external; the cursor can't cross it
 LOG="${XDG_RUNTIME_DIR:-/tmp}/mirror.log"
+MODE_FILE="$HOME/.local/state/armojidots/display-mode"   # mirror (default) | extend
 
 get_outputs() {
   if [ -n "$MIRROR_TEST_JSON" ]; then cat "$MIRROR_TEST_JSON"; else swaymsg -t get_outputs --raw; fi
@@ -66,6 +70,17 @@ apply() {
   # no panel at all (desktop): leave the layout to sway/outputs
   printf '%s' "$json" | jq -e --arg i "$INTERNAL" 'any(.[]; .name == $i)' >/dev/null || return 0
   exts=$(printf '%s' "$json" | jq -r --arg i "$INTERNAL" '.[] | select(.name != $i) | .name')
+
+  # extend mode (spotlight's Monitors page): no mirrors; an external still
+  # parked far away from mirror mode moves next to the panel
+  if [ "$(cat "$MODE_FILE" 2>/dev/null)" = extend ]; then
+    for e in $exts; do
+      stop_mirror "$e"
+      ex=$(printf '%s' "$json" | jq -r --arg e "$e" '.[] | select(.name == $e) | .rect.x')
+      [ "${ex:-0}" -ge "$GAP" ] && run output "$e" pos "${iw:-1920}" 0
+    done
+    return 0
+  fi
 
   if [ -z "$iw" ]; then
     # panel is off (lid closed?) -> nothing to mirror; external works normally

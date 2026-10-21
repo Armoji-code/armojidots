@@ -12,5 +12,5 @@ Chip {
   tip: net ? net.name + " (" + Math.round(sig) + "%)<br>" + wifi.name
      : wired ? devs.find(d => d.type === DeviceType.Wired && d.connected).name : ""
   fg: net ? Theme.col("wifi", "accent") : Theme.fg
-  onClicked: Quickshell.execDetached(["foot", "--app-id=float-tui", "-e", "nmtui"])
+  onClicked: Quickshell.execDetached(["qs", "-c", "armoji-shell", "ipc", "call", "spotlight", "page", "wifi"])
 }

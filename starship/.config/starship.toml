@@ -4,23 +4,38 @@
 add_newline = true
 format = "$directory$git_branch$git_status$cmd_duration$line_break$character"
 
+# Colors from the active palette: theme.sh writes a copy of this file with
+# these hexes swapped for the palette's (~/.config/armoji-shell/starship.toml,
+# set as STARSHIP_CONFIG, a fish universal); starship re-reads it every prompt, so a
+# palette change recolors open terminals at the next prompt.
+palette = "armoji"
+
 [directory]
-style = "bold cyan"
+style = "bold dir"
 truncation_length = 3
 truncate_to_repo = true
 
 [git_branch]
 symbol = " "
-style = "purple"
+style = "branch"
 
 [git_status]
-style = "yellow"
+style = "status"
 
 [cmd_duration]
 min_time = 2000
 format = "took [$duration]($style) "
-style = "dimmed white"
+style = "dim"
 
 [character]
-success_symbol = "[❯](bold green)"
-error_symbol = "[❯](bold red)"
+success_symbol = "[❯](bold ok)"
+error_symbol = "[❯](bold err)"
+
+# keep last: theme.sh replaces everything from here down
+[palettes.armoji]
+dir = "#56b6c2"
+branch = "#c678dd"
+status = "#e5c07b"
+ok = "#98c379"
+err = "#e06c75"
+dim = "#8c8c8c"

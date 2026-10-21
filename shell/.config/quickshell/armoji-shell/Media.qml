@@ -40,7 +40,7 @@ Item {
     height: parent.height
     implicitWidth: row.implicitWidth + 2 * Theme.n("mediaPad", 6)
     width: implicitWidth
-    radius: height / 2
+    radius: Math.min(Theme.n("mediaRadius", 999), height / 2)
     color: Theme.chipBg
 
     Row {
@@ -67,7 +67,7 @@ Item {
               anchors.bottom: parent?.bottom
               width: cava.barW
               height: cava.barW + (cava.maxH - cava.barW) * cava.levels[index] / 7
-              radius: width / 2
+              radius: Math.min(pill.radius, width / 2)
               color: Theme.col("cava", "accent")
               Behavior on height { NumberAnimation { duration: 60 } }
             }
@@ -94,7 +94,7 @@ Item {
         width: 22; height: 22
         anchors.verticalCenter: parent.verticalCenter
         ClippingRectangle {
-          width: 22; height: 22; radius: 11
+          width: 22; height: 22; radius: Math.min(pill.radius, 11)
           color: Theme.accentDim
           Text {
             anchors.centerIn: parent

@@ -1,5 +1,5 @@
 #!/bin/sh
-# /set monitors: reuse an already-open nwg-displays window instead of opening
+# /monitors → Advanced…: reuse an already-open nwg-displays window instead of opening
 # a second one. Checked via the sway tree, not `pgrep` — a zombie process
 # (exited but unreaped by its parent) still matches pgrep by name, which
 # would wrongly "find" a window that's no longer there.

@@ -22,7 +22,10 @@ Item {
     .sort((a, b) => a.number - b.number)
   readonly property string activeName: wss.find(w => w.active)?.name ?? ""
   function ws(name) { return wss.find(w => w.name === name) ?? null }
-  function label(name) { return /^\d{2,3}$/.test(name) ? name.slice(1) : name }
+  function label(name) {
+    const l = /^\d{2,3}$/.test(name) ? name.slice(1) : name
+    return Theme.n("wsBrackets", false) ? "[" + l + "]" : l   // TUI-style packs
+  }
   function num(name) { const n = parseInt(name); return isNaN(n) ? 1e9 : n }
 
   ListModel { id: slots }   // role: name, leaving

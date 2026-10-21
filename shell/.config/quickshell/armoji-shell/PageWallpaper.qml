@@ -1,0 +1,65 @@
+// Spotlight page: wallpaper thumbnails; a click sets it.
+import QtQuick
+import Quickshell
+import Quickshell.Io
+import Quickshell.Widgets
+
+GridView {
+  id: g
+  required property var host
+  readonly property string dir: host.ctx.home + "/Pictures/Wallpapers"
+  property string current: ""
+  Process {
+    running: true
+    command: ["readlink", "-f", g.host.ctx.home + "/dotfiles/wallpapers/current"]
+    stdout: StdioCollector { onStreamFinished: g.current = text.trim() }
+  }
+  implicitWidth: 820
+  implicitHeight: Math.min(Math.ceil(count / 4) * cellHeight, 440)
+  model: host.ctx.wallpapers.filter(f => /\.(jpe?g|png|webp)$/i.test(f))
+  clip: true
+  boundsBehavior: Flickable.StopAtBounds
+  cellWidth: width / 4
+  cellHeight: cellWidth * 0.62 + 26
+  delegate: Item {
+    id: cell
+    required property string modelData
+    readonly property string path: g.dir + "/" + modelData
+    readonly property bool active: path === g.current
+    width: g.cellWidth; height: g.cellHeight
+    ClippingRectangle {
+      id: frame
+      anchors { fill: parent; margins: 5; bottomMargin: 26 }
+      radius: Theme.cardRadius
+      color: Theme.chipBg
+      Image {
+        anchors.fill: parent
+        source: "file://" + cell.path
+        sourceSize: Qt.size(320, 200)
+        fillMode: Image.PreserveAspectCrop
+        asynchronous: true
+      }
+    }
+    Rectangle {   // outline above the clipped image
+      anchors.fill: frame
+      radius: Theme.cardRadius
+      color: "transparent"
+      border.width: cell.active ? 2 : hov.containsMouse ? 1 : 0
+      border.color: cell.active ? Theme.accent : Theme.fg
+    }
+    UiLabel {
+      anchors { top: frame.bottom; topMargin: 4; horizontalCenter: parent.horizontalCenter }
+      width: parent.width - 10; horizontalAlignment: Text.AlignHCenter
+      dim: !cell.active; text: cell.modelData.replace(/\.[^.]+$/, "")
+    }
+    MouseArea {
+      id: hov
+      anchors.fill: parent
+      hoverEnabled: true
+      onClicked: {
+        g.current = cell.path
+        Quickshell.execDetached([g.host.ctx.home + "/.config/sway/scripts/wallpaper-pick.sh", cell.path])
+      }
+    }
+  }
+}

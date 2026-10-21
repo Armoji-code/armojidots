@@ -1,12 +1,24 @@
-// Spotlight's own command providers (/power /update /set /web /keys), ported
-// from the Python armoji-spotlight. Each returns a list of items:
-//   { text, subtext, icon, kind: launch|cmd|fill|calc|noop, value, iconPx }
+// Spotlight's own commands: one per settings page (/wifi /bluetooth /monitors
+// /style /tone /colors /wallpaper /power /keys /update, /settings = the hub)
+// plus /web, ported from the Python armoji-spotlight. Each returns a list of items:
+//   { text, subtext, icon, kind: launch|cmd|fill|calc|noop|page, value, iconPx }
+// kind page: value names a page shown inside Spotlight's box (Page*.qml, or
+// term:<shell command> for SpotTerm)
 // `ctx` = { home, style, packs: {name: {title, description, allowed_palettes, neutral}},
 //           wallpapers: [file names] } — gathered by Spotlight.qml on open.
 .pragma library
 
 const PALETTES = ["wallpaper", "ruby", "orange", "dandelion", "emerald",
                   "cobalt", "bubblegum", "purpur", "b&w"]
+
+// seed colors of the named palettes (mirrors theme.sh resolve()) — swatches
+var SEEDS = { ruby: "#e35d6a", orange: "#f28744", dandelion: "#f2c94c", emerald: "#3ecf82",
+  cobalt: "#5480f2", bubblegum: "#f06ec3", purpur: "#a06ef0", "b&w": "#e8eaef",
+  red: "#D71921", green: "#4A9E5C", blue: "#5B9BF6", yellow: "#D4A843" }
+function palettes(ctx) {
+  const allowed = ((ctx.packs[ctx.style] || {}).allowed_palettes || "").split(/\s+/).filter(s => s)
+  return allowed.length ? allowed : PALETTES
+}
 
 function item(text, subtext, icon, kind, value, iconPx) {
   return { text: text, subtext: subtext || "", icon: icon || "", kind: kind,
@@ -35,15 +47,16 @@ function power(arg) {
 
 function update(arg) {
   const a = arg.trim().toLowerCase()
-  return [["Full System Update", "system-software-update", "foot --app-id=float-tui -e yay -Syu"],
+  // run inside Spotlight's box (SpotTerm.qml); Kernel Manager is its own GUI
+  return [["Full System Update", "system-software-update", "page", "term:yay -Syu"],
           // pull the latest armojidots; stowed symlinks pick the new files up
           // (the shell reloads itself — open sidebar sessions restart)
-          ["Dotfiles", "folder-git", "foot --app-id=float-tui -e sh -c 'cd ~/dotfiles && git pull --ff-only; printf \"\\npress Enter to close\"; read _'"],
-          ["Pacman", "system-software-update", "foot --app-id=float-tui -e sudo pacman -Syu"],
-          ["AUR (yay)", "system-software-update", "foot --app-id=float-tui -e yay -Sua"],
-          ["Kernel", "org.cachyos.KernelManager", "cachyos-kernel-manager"]]
+          ["Dotfiles", "folder-git", "page", "term:cd ~/dotfiles && git pull --ff-only"],
+          ["Pacman", "system-software-update", "page", "term:sudo pacman -Syu"],
+          ["AUR (yay)", "system-software-update", "page", "term:yay -Sua"],
+          ["Kernel", "org.cachyos.KernelManager", "cmd", "cachyos-kernel-manager"]]
     .filter(o => o[0].toLowerCase().includes(a))
-    .map(o => item(o[0], "", o[1], "cmd", o[2]))
+    .map(o => item(o[0], "", o[1], o[2], o[3]))
 }
 
 function styles(ctx, filter) {
@@ -70,44 +83,17 @@ function wallpapers(ctx, filter) {
   return out.length ? out : [item("No wallpapers found", p.wallDir, "image-missing", "noop")]
 }
 
-function set(ctx, arg) {
-  // two-level: "/set" shows categories; Style/Colors/Tone/Wallpaper drill down
-  // (fill), Wi-Fi/Bluetooth/Monitors run straight away
+function colors(ctx, filter) {
   const p = paths(ctx)
-  const parts = arg.trim().split(/\s+/)
-  const sub = (parts[0] || "").toLowerCase()
-  const rest = parts.slice(1).join(" ").trim().toLowerCase()
-  const info = ctx.packs[ctx.style] || {}
-  let cats = [
-    ["Style", "style", "applications-graphics", "", "fill", "/set style "],
-    ["Colors", "color", "preferences-desktop-theme", "", "fill", "/set color "],
-    ["Tone", "tone", "preferences-desktop-display", "", "fill", "/set tone "],
-    ["Wallpaper", "wallpaper", "preferences-desktop-wallpaper", "~/Pictures/Wallpapers", "fill", "/set wallpaper "],
-    ["Wi-Fi", "wifi", "network-wireless", "", "cmd", "foot --app-id=float-tui -e nmtui"],
-    ["Bluetooth", "bluetooth", "bluetooth", "", "cmd", "foot --app-id=float-tui -e bluetuith"],
-    ["Monitors", "monitors", "video-display", "", "cmd", "~/.config/sway/scripts/monitors.sh"],
-  ]
-  if (info.neutral === "1") cats = cats.filter(c => c[1] !== "tone")   // monochrome packs ignore tone
-  const known = ["style", "styles", "color", "colors", "tone", "wallpaper", "wall",
-                 "wifi", "bluetooth", "blue", "monitors", "monitor", "displays"]
-  if (!known.includes(sub))
-    return cats.filter(c => c[0].toLowerCase().includes(sub) || c[1].includes(sub))
-               .map(c => item(c[0], c[3], c[2], c[4], c[5]))
-  if (sub === "style" || sub === "styles") return styles(ctx, rest)
-  if (sub === "color" || sub === "colors") {
-    const allowed = (info.allowed_palettes || "").split(/\s+/).filter(s => s)
-    return (allowed.length ? allowed : PALETTES).filter(x => x.toLowerCase().includes(rest))
-      .map(x => item(x, "palette", "preferences-desktop-theme", "cmd", p.theme + " apply " + x))
-  }
-  if (sub === "tone")
-    return ["light", "heavy", "loud"].filter(t => t.includes(rest))
-      .map(t => item(t[0].toUpperCase() + t.slice(1), "intensity", "preferences-desktop-display",
-                     "cmd", p.theme + " tone " + t))
-  if (sub === "wallpaper" || sub === "wall") return wallpapers(ctx, rest)
-  if (sub === "wifi") return [item("Wi-Fi (nmtui)", "", "network-wireless", "cmd", "foot --app-id=float-tui -e nmtui")]
-  if (sub === "monitors" || sub === "monitor" || sub === "displays")
-    return [item("Monitors (nwg-displays)", "", "video-display", "cmd", "~/.config/sway/scripts/monitors.sh")]
-  return [item("Bluetooth (bluetuith)", "", "bluetooth", "cmd", "foot --app-id=float-tui -e bluetuith")]
+  return palettes(ctx).filter(x => x.toLowerCase().includes(filter))
+    .map(x => item(x, "palette", "preferences-desktop-theme", "cmd", p.theme + " apply " + x))
+}
+
+function tones(ctx, filter) {
+  const p = paths(ctx)
+  return ["light", "heavy", "loud"].filter(t => t.includes(filter))
+    .map(t => item(t[0].toUpperCase() + t.slice(1), "intensity", "preferences-desktop-display",
+                   "cmd", p.theme + " tone " + t))
 }
 
 function web(arg) {
@@ -119,7 +105,7 @@ function web(arg) {
 
 // keybind cheat-sheet — mirrors the sway config
 const KEYBINDS = [
-  ["Win + T", "Open terminal (foot)"],
+  ["Win + T", "Open terminal (kitty)"],
   ["Win + E", "Open file manager (Nemo)"],
   ["Win + W", "Open web browser (Zen)"],
   ["Win + D", "Toggle Spotlight launcher"],
@@ -146,22 +132,46 @@ function keys(arg) {
                      : [item("No matching shortcut", "", "dialog-question", "noop")]
 }
 
-const COMMANDS = ["/power", "/set", "/web", "/keys", "/update"]
+// command → its page ("" = /web, which is a list). Order matters for
+// prefixes: /w → /wifi, /we → /web, /wa → /wallpaper.
+const COMMANDS = [["/settings", "hub"], ["/wifi", "wifi"], ["/web", ""], ["/wallpaper", "wallpaper"],
+  ["/bluetooth", "bluetooth"], ["/monitors", "monitors"], ["/displays", "monitors"], ["/style", "style"],
+  ["/tone", "style"], ["/colors", "colors"], ["/power", "power"], ["/keys", "keys"], ["/update", "updates"]]
+// the command a typed head means: exact or by prefix; "/" alone = /settings
+function command(head) {
+  head = head.toLowerCase()
+  if (head === "/") return COMMANDS[0]
+  return COMMANDS.find(c => c[0].startsWith(head)) ?? null
+}
+function split(text) {
+  const t = text.trim(), i = t.indexOf(" ")
+  return [i < 0 ? t : t.slice(0, i), i < 0 ? "" : t.slice(i + 1).trim().toLowerCase()]
+}
 
-// text starting with "/": a command's items, or matching command suggestions
+// the page a "/" query shows; unknown commands land on the hub
+function pageFor(text) {
+  if (!text.trim().startsWith("/")) return ""
+  const c = command(split(text)[0])
+  return c ? c[1] : "hub"
+}
+// true when the query has an argument for Enter to act on (/colors ruby,
+// /power reboot), not just the page's own command
+function quickArg(text) { return split(text)[1] !== "" }
+
+// a "/" query's quick items (what Enter runs; the list itself only for /web)
 function run(ctx, text) {
-  const i = text.indexOf(" ")
-  const head = i < 0 ? text : text.slice(0, i)
-  const arg = i < 0 ? "" : text.slice(i + 1)
-  switch (head) {
+  const [head, arg] = split(text)
+  switch (command(head)?.[0]) {
     case "/power": return power(arg)
     case "/update": return update(arg)
-    case "/set": return set(ctx, arg)
+    case "/style": return styles(ctx, arg)
+    case "/tone": return tones(ctx, arg)
+    case "/colors": return colors(ctx, arg)
+    case "/wallpaper": return wallpapers(ctx, arg)
     case "/web": return web(arg)
     case "/keys": return keys(arg)
   }
-  const sugg = COMMANDS.filter(c => c.startsWith(head)).map(c => item(c, "command", "utilities-terminal", "fill", c + " "))
-  return sugg.length ? sugg : [item("No such command", "", "dialog-error", "noop")]
+  return []
 }
 
 // parse `elephant query --json` output (one JSON object per line)
