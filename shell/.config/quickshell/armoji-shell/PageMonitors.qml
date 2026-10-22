@@ -13,7 +13,7 @@ Item {
   implicitWidth: 820
   implicitHeight: sc.implicitHeight + 32
   readonly property string home: host.ctx.home
-  readonly property string internal: "eDP-1"
+  property string internal: ""   // built-in panel (eDP/LVDS/DSI), found on load
   property var ed: []        // editable copy: {name, label, enabled, w, h, r, scale, transform, adaptive, x, y, modes}
   property var orig: []      // state before the last Apply (for revert)
   property int selIdx: 0
@@ -32,6 +32,7 @@ Item {
     stdout: StdioCollector {
       onStreamFinished: {
         let j; try { j = JSON.parse(text) } catch (e) { return }
+        pg.internal = (j.find(o => /^(eDP|LVDS|DSI)/.test(o.name)) ?? {}).name ?? ""
         pg.ed = j.map(o => {
           const m = o.current_mode ?? o.modes[0] ?? { width: 1920, height: 1080, refresh: 60000 }
           return { name: o.name, label: (o.make + " " + o.model).trim(), enabled: o.active,

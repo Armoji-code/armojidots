@@ -1,5 +1,5 @@
 #!/bin/sh
-# Keyboard layout module: EN/LT set via input.conf's xkb_layout "us,lt" +
+# Keyboard layout module: layouts set via input.conf / keyboard.conf +
 # xkb_options "grp:alt_shift_toggle" (native Shift+Alt chord, most reliable
 # way to catch that combo — sway bindsym doesn't handle bare modifier chords
 # well). This script just reacts to the resulting sway IPC event:
@@ -13,7 +13,7 @@ label() {
   case "$1" in
     *US*|*us*) echo "EN" ;;
     *Lithuania*|*lt*|*LT*) echo "LT" ;;
-    *) echo "$1" ;;
+    *) printf '%s' "$1" | cut -c1-2 | tr '[:lower:]' '[:upper:]' ;;   # "German" → GE
   esac
 }
 

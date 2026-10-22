@@ -45,16 +45,19 @@ function power(arg) {
     .map(o => item(o[0], "", o[1], "cmd", o[2]))
 }
 
-function update(arg) {
+function update(ctx, arg) {
   const a = arg.trim().toLowerCase()
+  const tools = ctx.tools || []
+  const aur = ["yay", "paru"].find(t => tools.includes(t))   // AUR helper, if any
   // run inside Spotlight's box (SpotTerm.qml); Kernel Manager is its own GUI
-  return [["Full System Update", "system-software-update", "page", "term:yay -Syu"],
+  return [["Full System Update", "system-software-update", "page", "term:" + (aur ? aur + " -Syu" : "sudo pacman -Syu")],
           // pull the latest armojidots; stowed symlinks pick the new files up
           // (the shell reloads itself — open sidebar sessions restart)
           ["Dotfiles", "folder-git", "page", "term:cd ~/dotfiles && git pull --ff-only"],
           ["Pacman", "system-software-update", "page", "term:sudo pacman -Syu"],
-          ["AUR (yay)", "system-software-update", "page", "term:yay -Sua"],
+          ["AUR (" + aur + ")", "system-software-update", "page", "term:" + aur + " -Sua"],
           ["Kernel", "org.cachyos.KernelManager", "cmd", "cachyos-kernel-manager"]]
+    .filter(o => (o[0] !== "Kernel" || tools.includes("cachyos-kernel-manager")) && (aur || !o[0].startsWith("AUR")))
     .filter(o => o[0].toLowerCase().includes(a))
     .map(o => item(o[0], "", o[1], o[2], o[3]))
 }
@@ -100,14 +103,14 @@ function web(arg) {
   const q = arg.trim()
   if (!q) return [item("Type a query to search the web…", "", "web-browser", "noop")]
   const url = "https://www.google.com/search?q=" + encodeURIComponent(q)
-  return [item("Search the web for “" + q + "”", "google · zen", "web-browser", "cmd", 'zen-browser "' + url + '"')]
+  return [item("Search the web for “" + q + "”", "google · default browser", "web-browser", "cmd", 'xdg-open "' + url + '"')]
 }
 
 // keybind cheat-sheet — mirrors the sway config
 const KEYBINDS = [
   ["Win + T", "Open terminal (kitty)"],
   ["Win + E", "Open file manager (Nemo)"],
-  ["Win + W", "Open web browser (Zen)"],
+  ["Win + W", "Open web browser"],
   ["Win + D", "Toggle Spotlight launcher"],
   ["Win + Q", "Close focused window"],
   ["Win + Space", "Toggle floating"],
@@ -163,7 +166,7 @@ function run(ctx, text) {
   const [head, arg] = split(text)
   switch (command(head)?.[0]) {
     case "/power": return power(arg)
-    case "/update": return update(arg)
+    case "/update": return update(ctx, arg)
     case "/style": return styles(ctx, arg)
     case "/tone": return tones(ctx, arg)
     case "/colors": return colors(ctx, arg)

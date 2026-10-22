@@ -19,7 +19,10 @@ function __armoji_fetch
     switch (__armoji_tier)
         case mini
             set_color green
-            echo "HI ARMOJI ▪"
+            # name from install.sh (~/.config/armojidots/user.conf), else $USER
+            set -l name (string replace -rf '^NAME=' '' < ~/.config/armojidots/user.conf 2>/dev/null)
+            test -n "$name"; or set name $USER
+            echo "HI "(string upper -- $name)" ▪"
             set_color normal
         case stacked
             # cramped: logo on top, specs below so they don't collide

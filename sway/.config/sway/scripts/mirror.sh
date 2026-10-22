@@ -1,7 +1,7 @@
 #!/bin/sh
 # Duplicate the laptop panel onto any external display (Windows "Duplicate").
 #
-# sway can't mirror natively, so: the panel (eDP-1) stays the only real
+# sway can't mirror natively, so: the panel (eDP/LVDS/DSI) stays the only real
 # desktop; every external output is forced down to the panel's resolution,
 # parked far away in the layout (the cursor and workspaces can never wander
 # onto it) and covered by a fullscreen wl-mirror of the panel. A native-4K
@@ -17,7 +17,6 @@
 # Test hooks: MIRROR_TEST_JSON=<file> reads `swaymsg -t get_outputs` from a
 # file, MIRROR_DRY_RUN=1 prints the commands instead of running them.
 
-INTERNAL=eDP-1
 GAP=8000      # layout distance panel -> external; the cursor can't cross it
 LOG="${XDG_RUNTIME_DIR:-/tmp}/mirror.log"
 MODE_FILE="$HOME/.local/state/armojidots/display-mode"   # mirror (default) | extend
@@ -25,6 +24,9 @@ MODE_FILE="$HOME/.local/state/armojidots/display-mode"   # mirror (default) | ex
 get_outputs() {
   if [ -n "$MIRROR_TEST_JSON" ]; then cat "$MIRROR_TEST_JSON"; else swaymsg -t get_outputs --raw; fi
 }
+
+# the built-in panel: first eDP/LVDS/DSI output ("" on desktops)
+INTERNAL=$(get_outputs | jq -r 'first(.[] | select(.name | test("^(eDP|LVDS|DSI)")) | .name) // empty')
 
 run() {
   if [ -n "$MIRROR_DRY_RUN" ]; then echo "swaymsg $*"; else swaymsg "$@" >/dev/null; fi

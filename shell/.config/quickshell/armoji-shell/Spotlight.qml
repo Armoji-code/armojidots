@@ -30,7 +30,7 @@ Scope {
   property var items: []
   property string mode: "grid"         // grid (empty query) | list
   property int sel: 0
-  property var ctx: ({ home: Quickshell.env("HOME"), style: "material", packs: {}, wallpapers: [] })
+  property var ctx: ({ home: Quickshell.env("HOME"), style: "material", packs: {}, wallpapers: [], tools: [] })
 
   // page in the box: "" (results) | hub | wifi | bluetooth | monitors | style |
   // colors | wallpaper | power | keys | updates | term:<cmd>
@@ -64,6 +64,7 @@ Scope {
   IpcHandler {
     target: "spotlight"
     function toggle(): void { sp.shown ? sp.close() : sp.show() }
+    function hide(): void { sp.close() }
     // open with a query typed in (scripts, testing): `… ipc call spotlight search "/wifi"`
     function search(q: string): void { if (!sp.shown) sp.show(); sp.query = q; sp.page = Cmd.pageFor(q); sp.run(q) }
     // press Enter / Esc (testing without a keyboard)
@@ -92,7 +93,8 @@ Scope {
     id: ctxProc
     command: ["sh", "-c", 'cat ~/.local/state/armojidots/style 2>/dev/null; echo "\n@@@";'
       + ' for d in ~/.config/armoji-styles/*/; do echo "@@$(basename "$d")"; cat "$d/pack.conf" 2>/dev/null; done;'
-      + ' echo "@@@"; ls ~/Pictures/Wallpapers 2>/dev/null']
+      + ' echo "@@@"; ls ~/Pictures/Wallpapers 2>/dev/null;'
+      + ' echo "@@@"; for c in yay paru cachyos-kernel-manager; do command -v $c >/dev/null && echo $c; done']
     stdout: StdioCollector {
       onStreamFinished: {
         const parts = text.split("@@@\n")
@@ -102,7 +104,8 @@ Scope {
           packs[blk.slice(0, nl < 0 ? undefined : nl).trim()] = Cmd.packConf(nl < 0 ? "" : blk.slice(nl + 1))
         }
         sp.ctx = { home: sp.ctx.home, style: (parts[0] || "").trim() || "material", packs: packs,
-                   wallpapers: (parts[2] || "").split("\n").filter(s => s) }
+                   wallpapers: (parts[2] || "").split("\n").filter(s => s),
+                   tools: (parts[3] || "").split("\n").filter(s => s) }
       }
     }
   }

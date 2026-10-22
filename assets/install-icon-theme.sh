@@ -5,6 +5,6 @@
 set -e
 HERE="$(cd "$(dirname "$0")" && pwd)"
 mkdir -p "$HOME/.local/share/icons"
-tar -xf "$HERE/Slot-Multicolor-Dark-Icons.tar.xz" -C "$HOME/.local/share/icons"
+tar --warning=no-unknown-keyword -xf "$HERE/Slot-Multicolor-Dark-Icons.tar.xz" -C "$HOME/.local/share/icons"
 echo "Installed Slot-Multicolor-Dark-Icons to ~/.local/share/icons"
 echo "Run: theme.sh apply <palette>  (or 'startup') to select it + recolor generic folders"

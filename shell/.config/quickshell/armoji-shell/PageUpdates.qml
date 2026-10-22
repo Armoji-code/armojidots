@@ -13,7 +13,7 @@ Item {
   width: parent.width
   spacing: 8
   Repeater {
-    model: Cmd.update("")
+    model: Cmd.update(up.host.ctx, "")
     SpotRow {
       required property var modelData
       width: up.width
