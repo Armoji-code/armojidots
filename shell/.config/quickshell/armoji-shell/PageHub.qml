@@ -41,8 +41,7 @@ Item {
         required property var modelData
         width: 150
         height: 132
-        color: tileMa.containsMouse ? Theme.chipHover : Theme.chipBg
-        Behavior on color { ColorAnimation { duration: 120 } }
+        hover: tileMa.containsMouse
         Column {
           anchors.centerIn: parent
           width: parent.width - 20

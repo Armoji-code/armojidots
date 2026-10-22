@@ -154,9 +154,9 @@ Item {
         width: pg.lw(modelData) * canvas.k
         height: pg.lh(modelData) * canvas.k
         radius: Theme.inner(Theme.cardRadius, 4)
-        color: on ? Qt.alpha(Theme.accent, 0.35) : Theme.chipHover
-        border.width: on ? 2 : 1
-        border.color: on ? Theme.accent : Qt.alpha(Theme.fg, 0.25)
+        color: on ? Theme.selBg : Theme.chipHover
+        border.width: 1
+        border.color: on ? Theme.selBorder : Qt.alpha(Theme.fg, 0.25)
         opacity: modelData.enabled ? 1 : 0.4
         Column {
           anchors.centerIn: parent

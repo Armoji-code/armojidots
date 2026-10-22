@@ -30,8 +30,8 @@ Item {
         readonly property bool isArmed: pw.armed === modelData[0]
         width: 136
         height: 140
-        color: isArmed ? Qt.alpha("#e06c75", 0.3) : bMa.containsMouse ? Theme.chipHover : Theme.chipBg
-        Behavior on color { ColorAnimation { duration: 120 } }
+        hover: bMa.containsMouse
+        color: isArmed ? Qt.alpha("#e06c75", 0.3) : hover ? Theme.chipHover : Theme.chipBg
         Column {
           anchors.centerIn: parent
           spacing: 10

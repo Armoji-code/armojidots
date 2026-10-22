@@ -8,6 +8,7 @@ import QtQuick
 import Quickshell
 
 ShellRoot {
+  Wallpaper {}
   Bar {}
   Osd {}
   Dock {}

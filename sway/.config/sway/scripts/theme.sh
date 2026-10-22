@@ -137,6 +137,10 @@ resolve() {
     # (an if, not `&&`: a false test would end resolve() with status 1)
     if [ -n "$_v" ]; then eval "ALPHA_$(printf %s "$_k" | tr a-z A-Z)=\$_v"; fi
   done
+  # user opacity (spotlight colors page slider) replaces every surface alpha;
+  # no state file = the pack's own alphas
+  _op=$(cat "$STATE_DIR/opacity" 2>/dev/null)
+  if [ -n "$_op" ]; then ALPHA_BAR=$_op ALPHA_POP=$_op ALPHA_CC=$_op ALPHA_TERM=$_op ALPHA_APP=$_op; fi
 }
 
 # ── style packs ──────────────────────────────────────
@@ -599,9 +603,17 @@ case "$1" in
     printf '%s\n' "$2" > "$STATE_DIR/tone"
     apply "$(cat "$STATE_DIR/theme" 2>/dev/null || echo wallpaper)"
     ;;
+  opacity)   # 0.3..1 sets every surface alpha; "default" = the pack's own
+    if [ "$2" = default ]; then rm -f "$STATE_DIR/opacity"
+    else
+      awk -v o="$2" 'BEGIN{exit !(o>=0.3 && o<=1)}' || { echo "opacity: 0.3..1 | default" >&2; exit 1; }
+      printf '%s\n' "$2" > "$STATE_DIR/opacity"
+    fi
+    apply "$(cat "$STATE_DIR/theme" 2>/dev/null || echo wallpaper)"
+    ;;
   tone-pick)
     choice=$(printf 'light\nheavy\nloud\n' | walker --dmenu -p "tone ❯")
     [ -n "$choice" ] && "$0" tone "$choice"
     ;;
-  *) echo "usage: theme.sh apply <palette> | pick | tone <light|heavy|loud> | tone-pick | style <pack> | style-pick | startup" >&2; exit 1 ;;
+  *) echo "usage: theme.sh apply <palette> | pick | tone <light|heavy|loud> | tone-pick | opacity <0.3..1|default> | style <pack> | style-pick | startup" >&2; exit 1 ;;
 esac

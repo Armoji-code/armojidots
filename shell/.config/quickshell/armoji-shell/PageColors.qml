@@ -16,6 +16,11 @@ Item {
   readonly property bool custom: !(host.ctx.packs[host.ctx.style]?.allowed_palettes)
   FileView { id: cur; path: pg.host.ctx.home + "/.local/state/armojidots/theme"; watchChanges: true; onFileChanged: reload() }
   readonly property string active: cur.text().trim()
+  FileView { id: opf; path: pg.host.ctx.home + "/.local/state/armojidots/opacity"; watchChanges: true; printErrors: false; onFileChanged: reload() }
+  // no file = pack default; show the bar's alpha then
+  readonly property bool opSet: opf.text().trim() !== ""
+  property real op: opSet ? Number(opf.text().trim()) : Theme.bg.a
+  function setOp(v) { Quickshell.execDetached(["sh", "-c", '"$0" opacity "$1"', theme, v]) }
 
   function apply(name) { Quickshell.execDetached(["sh", "-c", '"$0" apply "$1"', theme, name]) }
 
@@ -53,6 +58,29 @@ Item {
           }
           UiLabel { anchors.horizontalCenter: parent.horizontalCenter; dim: !sw.on; text: sw.modelData }
         }
+      }
+    }
+    // surface opacity: sets bar/popup/terminal/app alphas (applied on release)
+    Row {
+      spacing: 10
+      UiLabel { anchors.verticalCenter: parent.verticalCenter; dim: true; text: "Opacity  " + (pg.opSet ? Math.round(pg.op * 100) + "%" : "pack default") }
+      UiButton { visible: pg.opSet; text: "Default"; onClicked: pg.setOp("default") }
+    }
+    Rectangle {
+      id: track
+      width: parent.width; height: 22; radius: Theme.ctl(22)
+      color: Theme.chipHover
+      Rectangle {
+        width: track.height + (track.width - track.height) * (pg.op - 0.3) / 0.7
+        height: parent.height; radius: parent.radius
+        color: Theme.accent
+      }
+      MouseArea {
+        anchors.fill: parent
+        function set(m) { pg.op = Math.round(Math.max(0.3, Math.min(1, 0.3 + 0.7 * (m.x - track.height / 2) / (width - track.height))) * 20) / 20 }
+        onPressed: m => set(m)
+        onPositionChanged: m => set(m)
+        onReleased: pg.setOp(String(pg.op))
       }
     }
   }

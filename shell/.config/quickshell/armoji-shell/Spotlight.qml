@@ -293,9 +293,9 @@ Scope {
                 width: (sp.w - 2 * panel.pad - (sp.cols - 1) * gridView.spacing) / sp.cols
                 height: 44 + 6 + 16 + 20
                 radius: Theme.cardRadius
-                color: on ? Theme.col("spSel", "accent@" + Theme.n("spSelAlpha", 0.22)) : Theme.col("spCellBg", "transparent")
+                color: on || cellMa.containsMouse ? Theme.chipHover : Theme.col("spCellBg", "transparent")
                 border.width: 1
-                border.color: on ? Qt.alpha(Theme.accent, Theme.n("spSelBorderAlpha", 0.35)) : "transparent"
+                border.color: on ? Theme.selBorder : "transparent"
                 Behavior on color { ColorAnimation { duration: 140 } }
                 Column {
                   anchors.centerIn: parent
@@ -312,16 +312,16 @@ Scope {
                     width: Math.min(implicitWidth, cell.width - 12)
                     elide: Text.ElideRight
                     text: cell.modelData.text
-                    color: cell.on ? Theme.col("spSelFg", "fg") : Theme.muted
+                    color: cell.on ? Theme.fg : Theme.muted
                     font.family: Theme.n("spLabelFont", Theme.font)
                     font.pixelSize: Theme.n("spLabelSize", 12)
                     font.letterSpacing: Theme.ls(Theme.n("spLabelSize", 12), "spLabelSpacing")
                   }
                 }
                 MouseArea {
+                  id: cellMa
                   anchors.fill: parent
                   hoverEnabled: true
-                  onEntered: sp.sel = cell.index
                   onClicked: sp.activate(cell.index)
                 }
               }
@@ -390,12 +390,11 @@ Scope {
               required property var modelData
               required property int index
               width: ListView.view.width
-              on: sp.sel === index
+              cursor: sp.sel === index
               ic: modelData.iconPx || 30
               icon: sp.iconSrc(modelData.icon)
               title: modelData.text
               sub: modelData.subtext
-              onHovered: sp.sel = index
               onClicked: sp.activate(index)
             }
           }

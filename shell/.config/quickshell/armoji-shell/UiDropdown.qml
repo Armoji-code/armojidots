@@ -57,7 +57,10 @@ Rectangle {
         width: ListView.view.width
         height: 28
         radius: Theme.ctlRadius
-        color: index === d.current ? Theme.col("spSel", "accent@0.3") : rowMa.containsMouse ? Theme.chipHover : "transparent"
+        readonly property bool sel: index === d.current
+        color: sel ? Theme.selBg : rowMa.containsMouse ? Theme.chipHover : "transparent"
+        border.width: sel ? 1 : 0
+        border.color: Theme.selBorder
         Text {
           anchors { left: parent.left; leftMargin: 9; verticalCenter: parent.verticalCenter }
           text: parent.modelData

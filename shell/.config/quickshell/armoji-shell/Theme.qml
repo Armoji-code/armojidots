@@ -52,6 +52,12 @@ Singleton {
   readonly property color border: col("border", "transparent")
   readonly property color chipBg: col("chipBg", "#12ffffff")
   readonly property color chipHover: col("chipHover", "#24ffffff")
+  // selected / active state of anything you pick (tiles, rows, cards,
+  // segments): accent tint + accent outline. Hover is chipHover, no outline;
+  // the keyboard cursor in Spotlight's results is chipHover + accent outline.
+  readonly property color selBg: col("spSel", "accent@" + n("spSelAlpha", 0.22))
+  readonly property color selBorder: Qt.alpha(accent, n("spSelBorderAlpha", 0.35))
+  readonly property color selFg: col("spSelFg", "fg")
 
   // shape of Spotlight's page controls: pills, or `ctlRadius` corners
   readonly property bool ctlPill: n("ctlPill", true)

@@ -3,9 +3,13 @@
 # theme.sh both read. Wallpapers live in ~/Pictures/Wallpapers.
 #   wallpaper-pick.sh "<path>"   set that image directly
 #                                (used by spotlight's /wallpaper page)
+#   wallpaper-pick.sh pipes      live pipes wallpaper (quickshell Wallpaper.qml)
 #   wallpaper-pick.sh            no arg → dmenu picker (fallback)
 WALLDIR="$HOME/Pictures/Wallpapers"
 LINK="$HOME/dotfiles/wallpapers/current"
+LIVE="$HOME/.local/state/armojidots/live-wallpaper"
+
+if [ "$1" = pipes ]; then echo pipes > "$LIVE"; exit 0; fi
 
 if [ -n "$1" ]; then
   pick="$1"
@@ -18,6 +22,7 @@ else
 fi
 [ -f "$pick" ] || { notify-send "wallpaper" "not found: $pick"; exit 1; }
 
+rm -f "$LIVE"
 ln -sf "$pick" "$LINK"
 pkill -x swaybg
 swaymsg exec "swaybg -i '$LINK' -m fill"

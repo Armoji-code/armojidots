@@ -37,10 +37,8 @@ Item {
           readonly property var info: pg.host.ctx.packs[modelData]
           width: 230
           height: 96
-          color: active ? Qt.alpha(Theme.accent, 0.22) : cardMa.containsMouse ? Theme.chipHover : Theme.chipBg
-          border.width: 1
-          border.color: active ? Qt.alpha(Theme.accent, 0.5) : "transparent"
-          Behavior on color { ColorAnimation { duration: 120 } }
+          sel: active
+          hover: cardMa.containsMouse
           Column {
             anchors { fill: parent; margins: 14 }
             spacing: 6

@@ -18,7 +18,9 @@ Rectangle {
     x: 3 + (at?.x ?? 0); y: 3
     width: at?.width ?? 0; height: s.height - 6
     radius: Theme.inner(s.radius, 3)
-    color: Theme.col("spSel", "accent@0.4")
+    color: Theme.selBg
+    border.width: 1
+    border.color: Theme.selBorder
     Behavior on x { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
     Behavior on width { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
   }

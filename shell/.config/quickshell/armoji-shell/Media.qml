@@ -17,7 +17,7 @@ Item {
   readonly property var cur: player ?? last
 
   implicitHeight: Theme.chipHeight
-  readonly property real edgeRadius: Theme.chipHeight / 2   // pill ends
+  readonly property real edgeRadius: Math.min(Theme.n("mediaRadius", 999), Theme.chipHeight / 2)   // matches the pill
   implicitWidth: player ? pill.implicitWidth : 0
   visible: implicitWidth > 0.5
   opacity: player ? 1 : 0

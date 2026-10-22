@@ -1,5 +1,6 @@
 // A list row (icon, title, subtitle) — Spotlight's results and the
-// list pages share it. `on` = selected; `badge` = small text on the right.
+// list pages share it. `on` = selected, `cursor` = keyboard cursor;
+// `badge` = small text on the right.
 import QtQuick
 
 Rectangle {
@@ -9,14 +10,15 @@ Rectangle {
   property string sub
   property string badge
   property bool on: false
+  property bool cursor: false
   property real ic: 30
-  signal hovered()
   signal clicked()
   height: ic + 16
   radius: Theme.cardRadius
-  color: on ? Theme.col("spSel", "accent@" + Theme.n("spSelAlpha", 0.22)) : ma.containsMouse ? Qt.alpha(Theme.fg, 0.05) : "transparent"
+  readonly property bool sel: on
+  color: sel ? Theme.selBg : cursor || ma.containsMouse ? Theme.chipHover : "transparent"
   border.width: 1
-  border.color: on ? Qt.alpha(Theme.accent, Theme.n("spSelBorderAlpha", 0.35)) : "transparent"
+  border.color: sel || cursor ? Theme.selBorder : "transparent"
   Behavior on color { ColorAnimation { duration: 140 } }
   Image {
     id: rowIcon
@@ -34,7 +36,7 @@ Rectangle {
       width: parent.width
       elide: Text.ElideRight
       text: row.title
-      color: row.on ? Theme.col("spSelFg", "fg") : Theme.fg
+      color: row.sel ? Theme.selFg : Theme.fg
       font.family: Theme.n("spTitleFont", Theme.font)
       font.pixelSize: Theme.n("spTitleSize", 15)
     }
@@ -43,7 +45,7 @@ Rectangle {
       width: parent.width
       elide: Text.ElideRight
       text: row.sub
-      color: row.on ? Qt.alpha(Theme.col("spSelFg", "fg"), 0.7) : Theme.muted
+      color: row.sel ? Qt.alpha(Theme.selFg, 0.7) : Theme.muted
       font.family: Theme.n("spSubFont", Theme.font)
       font.pixelSize: Theme.n("spSubSize", 12)
       font.letterSpacing: Theme.ls(Theme.n("spSubSize", 12), "spSubSpacing")
@@ -61,7 +63,6 @@ Rectangle {
     id: ma
     anchors.fill: parent
     hoverEnabled: true
-    onEntered: row.hovered()
     onClicked: row.clicked()
   }
 }
