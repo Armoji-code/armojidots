@@ -32,9 +32,13 @@ extract_from_wallpaper() {
 import sys, colorsys
 from PIL import Image
 
-img = Image.open(sys.argv[1]).convert("RGB").resize((64, 64))
+try:
+    img = Image.open(sys.argv[1]).convert("RGB").resize((64, 64))
+    colors = img.getcolors(64 * 64)
+except Exception:          # no wallpaper set (live wallpaper / fresh install)
+    colors = []
 best, best_score = None, 0
-for count, (r, g, b) in img.getcolors(64 * 64):
+for count, (r, g, b) in colors:
     h, s, v = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
     score = count * (s ** 1.5) * v
     if v > 0.25 and score > best_score:
@@ -469,7 +473,7 @@ PYEOF2
 ignore-empty-password
 show-failed-attempts
 daemonize
-image=$HOME/dotfiles/wallpapers/current
+$([ -e "$HOME/dotfiles/wallpapers/current" ] && echo "image=$HOME/dotfiles/wallpapers/current")
 scaling=fill
 # darkened, blurred background
 effect-blur=8x5

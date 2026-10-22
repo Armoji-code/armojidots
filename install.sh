@@ -149,15 +149,12 @@ user_setup() {
     "${layouts:-us}" > "$HOME/.config/sway/keyboard.conf"
   record file "$HOME/.config/sway/keyboard.conf"
 
-  walls="$HOME/Pictures/Wallpapers"
-  mkdir -p "$walls"
-  for f in "$REPO"/wallpapers/*.png "$REPO"/wallpapers/*.jpg; do
-    [ -f "$f" ] || continue
-    [ -e "$walls/$(basename "$f")" ] && continue
-    cp "$f" "$walls/"; record file "$walls/$(basename "$f")"
-  done
+  # no wallpapers ship with the repo: start on the live pipes wallpaper and
+  # a preset palette; images dropped in ~/Pictures/Wallpapers show up in /wallpaper
+  mkdir -p "$HOME/Pictures/Wallpapers" "$REPO/wallpapers" "$STATE"
   if [ ! -e "$REPO/wallpapers/current" ]; then
-    ln -sf "$walls/nothing-11-mesh.png" "$REPO/wallpapers/current"
+    echo pipes > "$STATE/live-wallpaper"
+    [ -f "$STATE/theme" ] || echo cobalt > "$STATE/theme"
   fi
 
   if [ ! -d "$HOME/.local/share/icons/Slot-Multicolor-Dark-Icons" ]; then
@@ -210,7 +207,7 @@ install() {
     • move configs it would replace to $STATE/backup-<date>/
     • link its configs into ~/.config with GNU Stow
     • ask your name (terminal greeting) and keyboard layouts
-    • copy its wallpapers to ~/Pictures/Wallpapers, install its icon theme
+    • install its icon theme (wallpapers: your own, in ~/Pictures/Wallpapers)
   Undo any time with: ./install.sh --uninstall
 
 EOF

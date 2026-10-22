@@ -23,6 +23,7 @@ fi
 [ -f "$pick" ] || { notify-send "wallpaper" "not found: $pick"; exit 1; }
 
 rm -f "$LIVE"
+mkdir -p "$(dirname "$LINK")"
 ln -sf "$pick" "$LINK"
 pkill -x swaybg
 swaymsg exec "swaybg -i '$LINK' -m fill"

@@ -63,8 +63,8 @@ The installer:
 3. links the configs into `~/.config` with [GNU Stow](https://www.gnu.org/software/stow/);
 4. asks for your **name** (shown in the terminal greeting) and your **keyboard
    layouts**;
-5. copies the bundled wallpapers to `~/Pictures/Wallpapers` and installs the
-   icon theme;
+5. installs the icon theme and starts you on the live pipes wallpaper (no
+   wallpapers are bundled; add your own to `~/Pictures/Wallpapers`);
 6. optionally applies two small system tweaks (sudo): the sidebar terminal
    color scheme, and normal CPU priority for the shell under `ananicy-cpp`.
 
@@ -129,7 +129,8 @@ the header shows what Enter will do.
 - **Style and colors:** use Spotlight (`/style`, `/colors`), or
   `~/.config/sway/scripts/theme.sh style <pack>` and `theme.sh apply <palette|#hex>`.
 - **Wallpapers:** put images in `~/Pictures/Wallpapers` and pick them with
-  `/wallpaper`. The `wallpaper` palette follows the current image.
+  `/wallpaper`. The `wallpaper` palette follows the current image. The
+  wallpapers in the screenshots belong to their artists and aren't included.
 - **Your own tweaks:** fish aliases and environment go in
   `~/.config/fish/conf.d/local.fish`, keyboard layouts in
   `~/.config/sway/keyboard.conf`, and monitor layouts in
@@ -155,7 +156,6 @@ shell picks up the changes by itself.
 | `gtk/`, `cursor/`, `environment-d/`, `icons/` | GTK settings, cursor, session environment, sidebar icons |
 | `waybar/` | Helper scripts used by the bar (layout, media, power profile, blue-light) |
 | `walker/` | Search backend config (elephant) and the dmenu used by script pickers |
-| `wallpapers/` | Bundled wallpapers |
 | `assets/` | Icon theme archive and screenshots |
 
 Generated files (colors, style tokens, the swaylock config, the greeting logo)
@@ -165,5 +165,10 @@ are written by `theme.sh` / `install.sh` and are not tracked.
 
 - [SwayFX](https://github.com/wlrfx/swayfx), [Quickshell](https://quickshell.org),
   [elephant](https://github.com/abenz1267/elephant) / [walker](https://github.com/abenz1267/walker)
-- Slot-Multicolor-Dark-Icons (bundled), Bibata cursor
+- [Slot-Multicolor-Dark-Icons](https://github.com/L4ki/Slot-Plasma-Themes) by L4ki (bundled, GPL-3.0), Bibata cursor
 - Fonts: Inter, Roboto, Geist, JetBrains Mono Nerd Font, Bitcount Grid Single
+
+## License
+
+[MIT](LICENSE). The bundled icon theme keeps its own license (GPL-3.0, see
+[`assets/LICENSE-Slot-Icons`](assets/LICENSE-Slot-Icons)).
