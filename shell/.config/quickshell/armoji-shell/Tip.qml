@@ -1,4 +1,5 @@
-// Hover tooltip under a chip: fades and drops in. Rich text allowed.
+// Hover tooltip beside a chip (`side`: below | above | left | right): fades
+// and slides in. Rich text allowed.
 import QtQuick
 import Quickshell
 
@@ -6,12 +7,13 @@ PopupWindow {
   id: pw
   required property Item target
   required property string text
-  property bool above: false
+  property string side: "below"
+  readonly property bool horiz: side === "left" || side === "right"
   anchor.item: target
-  anchor.rect.x: (target.width - implicitWidth) / 2
-  anchor.rect.y: above ? -implicitHeight - 6 : target.height + 6
-  implicitWidth: box.implicitWidth
-  implicitHeight: box.implicitHeight + 6
+  anchor.rect.x: side === "left" ? -implicitWidth - 6 : side === "right" ? target.width + 6 : (target.width - implicitWidth) / 2
+  anchor.rect.y: side === "above" ? -implicitHeight - 6 : side === "below" ? target.height + 6 : (target.height - implicitHeight) / 2
+  implicitWidth: box.implicitWidth + (horiz ? 6 : 0)
+  implicitHeight: box.implicitHeight + (horiz ? 0 : 6)
   color: "transparent"
   visible: true
 
@@ -20,7 +22,8 @@ PopupWindow {
 
   Rectangle {
     id: box
-    y: pw.above ? (1 - pw.t) * 6 : (1 - pw.t) * -6 + 6
+    x: pw.side === "right" ? pw.t * 6 : pw.side === "left" ? (1 - pw.t) * 6 : 0
+    y: pw.side === "below" ? pw.t * 6 : pw.side === "above" ? (1 - pw.t) * 6 : 0
     opacity: pw.t
     implicitWidth: label.implicitWidth + 20
     implicitHeight: label.implicitHeight + 12

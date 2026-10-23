@@ -6,6 +6,8 @@ Chip {
   property bool alt: false
   SystemClock { id: clk; precision: SystemClock.Seconds }
   text: Qt.formatDateTime(clk.date, alt ? "HH:mm:ss  yyyy-MMMM-dd" : "HH:mm:ss  yyyy-MM-dd")
+  vtext: Qt.formatDateTime(clk.date, "HH\nmm")
+  vsub: Qt.formatDateTime(clk.date, alt ? "dd\nMMM" : "dd\nMM").toUpperCase()
   fg: Theme.col("clock", "accent")
   fontSize: Theme.n("clockSize", Theme.fontSize)
   fontFamily: Theme.n("clockFont", Theme.font)   // nothingos: dot-matrix accent

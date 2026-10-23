@@ -12,9 +12,11 @@ PopupWindow {
   property var stack: [menu]         // submenu path; last = shown
   readonly property var shown: stack[stack.length - 1]
 
+  // opens away from the bar's edge
+  readonly property string side: BarConfig.popSide
   anchor.item: target
-  anchor.rect.x: (target.width - implicitWidth) / 2
-  anchor.rect.y: target.height + 8
+  anchor.rect.x: side === "left" ? -implicitWidth - 8 : side === "right" ? target.width + 8 : (target.width - implicitWidth) / 2
+  anchor.rect.y: side === "above" ? -implicitHeight - 8 : side === "below" ? target.height + 8 : 0
   implicitWidth: 230
   // fixed size + mask: a popup that resizes after the menu loads stops repainting
   implicitHeight: 640
@@ -33,7 +35,8 @@ PopupWindow {
     id: box
     readonly property real rowR: Math.min(Theme.chipRadius, 15)   // same corners as the bar chips
     width: parent.width
-    y: (1 - pw.t) * -6
+    // pinned to the end of the fixed window nearest the icon
+    y: pw.side === "above" ? pw.height - height + (1 - pw.t) * 6 : (1 - pw.t) * -6
     opacity: pw.t
     height: Math.min(col.implicitHeight + 12, pw.height - 8)
     radius: rowR > 0 ? rowR + 6 : 0

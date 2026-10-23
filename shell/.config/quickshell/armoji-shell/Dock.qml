@@ -1,6 +1,6 @@
 // ── armojidots · dock ───────────────────────────────────────────────
 // macOS-style autohide dock of running windows. A 3px hotspot strip at the
-// bottom edge reveals it; it hides 1s after the pointer leaves. Windows are
+// bottom edge (top when the bar is at the bottom) reveals it; it hides 1s after the pointer leaves. Windows are
 // grouped per workspace into sub-pills, sidebars (app_id sidebar-*) get their
 // own pill after a divider. Click focuses the window (sway jumps to it).
 // One hotspot+dock pair per screen, only the revealed screen's dock shows.
@@ -21,6 +21,8 @@ Scope {
   readonly property real padY: Theme.n("dockPadY", 6)
   readonly property real shelfH: icon + 2 * (appPad + wsPadY + padY)
   readonly property real headroom: Math.ceil(icon * (magMax - 1)) + 2
+  // the edge opposite a bottom bar; everything below anchors to `top ? top : bottom`
+  readonly property bool top: BarConfig.edge === "bottom"
 
   property bool shown: false
   property string on: ""                       // screen the dock is revealed on
@@ -77,7 +79,7 @@ Scope {
         WlrLayershell.namespace: "armoji-dock-hotspot"
         WlrLayershell.layer: WlrLayer.Top
         exclusionMode: ExclusionMode.Ignore
-        anchors { bottom: true; left: true; right: true }
+        anchors { top: root.top; bottom: !root.top; left: true; right: true }
         implicitHeight: 3
         color: "transparent"
         MouseArea {
@@ -94,8 +96,8 @@ Scope {
         WlrLayershell.namespace: "armoji-dock"
         WlrLayershell.layer: WlrLayer.Overlay
         exclusionMode: ExclusionMode.Ignore
-        anchors { bottom: true; left: true; right: true }
-        margins.bottom: 8
+        anchors { top: root.top; bottom: !root.top; left: true; right: true }
+        margins { top: root.top ? 8 : 0; bottom: root.top ? 0 : 8 }
         implicitHeight: root.shelfH + root.headroom
         color: "transparent"
         // input only where the dock is, and nowhere while hidden
@@ -122,7 +124,7 @@ Scope {
         Rectangle {
           id: shelf
           anchors.horizontalCenter: parent.horizontalCenter
-          y: win.height - root.shelfH + (1 - win.t) * 24
+          y: root.top ? (1 - win.t) * -24 : win.height - root.shelfH + (1 - win.t) * 24
           opacity: win.t
           width: row.width + 2 * Theme.n("dockPadX", 16)
           height: root.shelfH
@@ -134,8 +136,10 @@ Scope {
           Row {
             id: row
             x: Theme.n("dockPadX", 16)
-            anchors.bottom: parent.bottom
+            anchors.bottom: root.top ? undefined : parent.bottom
+            anchors.top: root.top ? parent.top : undefined
             anchors.bottomMargin: root.padY
+            anchors.topMargin: root.padY
             spacing: Theme.n("dockWsGap", 6)
 
             Repeater {
@@ -144,20 +148,24 @@ Scope {
                 id: grp
                 required property var modelData
                 required property int index
-                anchors.bottom: parent.bottom
+                anchors.bottom: root.top ? undefined : parent.bottom
+                anchors.top: root.top ? parent.top : undefined
                 spacing: Theme.n("dockWsGap", 6)
 
                 Rectangle {   // divider before the sidebar pill
                   visible: grp.modelData.sidebar && grp.index > 0
                   width: 1; height: root.icon - 6
-                  anchors.bottom: parent.bottom
+                  anchors.bottom: root.top ? undefined : parent.bottom
+                  anchors.top: root.top ? parent.top : undefined
                   anchors.bottomMargin: root.wsPadY + 3
+                  anchors.topMargin: root.wsPadY + 3
                   color: Theme.col("dockSep", "#40ffffff")
                 }
 
                 Rectangle {   // per-workspace sub-pill (stays at rest height; icons rise out)
                   id: sub
-                  anchors.bottom: parent.bottom
+                  anchors.bottom: root.top ? undefined : parent.bottom
+                  anchors.top: root.top ? parent.top : undefined
                   width: apps.width + 2 * Theme.n("dockWsPadX", 6)
                   height: root.icon + 2 * (root.appPad + root.wsPadY)
                   radius: Math.min(Theme.n("dockWsRadius", 999), height / 2)
@@ -166,8 +174,10 @@ Scope {
                   Row {
                     id: apps
                     x: Theme.n("dockWsPadX", 6)
-                    anchors.bottom: parent.bottom
+                    anchors.bottom: root.top ? undefined : parent.bottom
+                    anchors.top: root.top ? parent.top : undefined
                     anchors.bottomMargin: root.wsPadY
+                    anchors.topMargin: root.wsPadY
                     spacing: Theme.n("dockAppGap", 4)
 
                     Repeater {
@@ -181,7 +191,8 @@ Scope {
                         property real s: 1 + (root.magMax - 1) * Math.exp(-(d * d) / (2 * root.magSigma * root.magSigma))
                         Behavior on s { NumberAnimation { duration: 90; easing.type: Easing.OutQuad } }
                         readonly property real size: root.icon * s
-                        anchors.bottom: parent.bottom
+                        anchors.bottom: root.top ? undefined : parent.bottom
+                        anchors.top: root.top ? parent.top : undefined
                         width: size + 2 * root.appPad
                         height: width
                         radius: Theme.n("dockAppRadius", 12)
@@ -207,7 +218,7 @@ Scope {
                             I3.dispatch("[con_id=" + app.modelData.id + "] focus")
                           }
                         }
-                        TipHost { target: app; above: true; hovered: ma.containsMouse; text: app.modelData.title || app.modelData.appId }
+                        TipHost { target: app; above: !root.top; hovered: ma.containsMouse; text: app.modelData.title || app.modelData.appId }
                       }
                     }
                   }

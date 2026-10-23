@@ -26,7 +26,7 @@ Item {
     ["monitors", "video-display", dispMode.text().trim() === "extend" ? "Extend" : "Mirror"],
     ["customize", "preferences-desktop-theme", (host.ctx.packs[host.ctx.style]?.title ?? host.ctx.style) + " · " + (palette.text().trim() || "wallpaper")],
     ["idle", "preferences-desktop-screensaver", (Idle.saverOn ? "Saver " + Idle.saverMin + "m" : "Saver off") + " · " + (Idle.lockOn ? "Lock " + Idle.lockMin + "m" : "Lock off")],
-    ["layout", "preferences-system-windows", "Coming soon"],
+    ["layout", "preferences-system-windows", ({ pills: "Floating pills", pill: "One pill", taskbar: "Taskbar" })[BarConfig.mode] + " · " + BarConfig.edge],
     ["power", "system-shutdown", "Lock, suspend, reboot…"],
     ["keys", "input-keyboard", "Cheat sheet"],
     ["updates", "system-software-update", "System, AUR, dotfiles"],

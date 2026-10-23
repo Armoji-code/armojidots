@@ -8,10 +8,11 @@ QtObject {
   property string text: ""
   property bool hovered: false
   property bool above: false         // open above the target (bottom-edge widgets)
+  property string side: above ? "above" : "below"   // or left / right
   onHoveredChanged: if (hovered) delay.restart(); else { delay.stop(); loader.active = false }
 
   property Timer delay: Timer { interval: 450; onTriggered: h.loader.active = h.text !== "" }
   property LazyLoader loader: LazyLoader {
-    Tip { target: h.target; text: h.text; above: h.above }
+    Tip { target: h.target; text: h.text; side: h.side }
   }
 }

@@ -25,12 +25,14 @@ the lock screen.
   throughout, and reloaded live when the theme changes.
 - **Spotlight (`Win+D`):** app grid, fuzzy search, inline math, and a settings
   hub for Wi-Fi, Bluetooth, monitors, customization (style, colors, wallpaper,
-  fonts, cursor, icons), idle, power, updates
+  fonts, cursor, icons), audio, idle, bar layout, power, updates
   and shortcuts, all usable by mouse or keyboard.
 - **Style packs:** Material (default), Nothing OS, Aqua and Terminal. Each one
   defines shapes, spacing, fonts and translucency through tokens.
 - **Palettes:** take the accent from the wallpaper, pick a preset, or choose
   any color. Set the tone (light / heavy / loud) and the surface opacity.
+- **Bar layout:** floating pills, one connected pill or a flat taskbar, on any
+  screen edge; drag the buttons around the bar or hide them.
 - **Screensaver:** a pipes.sh-style animation in the current palette after 2 minutes idle.
 - **Terminal sidebars:** fish (`Win+R`) or Claude Code (`Win+Shift+R`) in a
   glass panel that slides in from any screen edge.
@@ -122,6 +124,7 @@ the header shows what Enter will do.
 | `/wallpaper` | Customize › Wallpaper: images from `~/Pictures/Wallpapers` |
 | `/fonts` · `/cursor` · `/icons` | Customize › Fonts (interface, monospace, display), cursor theme and size, icon theme and folder color |
 | `/idle` | Screensaver, auto-lock and screen-off, each on/off with a delay |
+| `/layout` | Bar style and screen edge; drag-to-arrange the bar's buttons |
 | `/power` | Lock, suspend, logout, reboot, shutdown |
 | `/update` | System / AUR / Flatpak / dotfiles updates in a terminal inside the box, or in the background with a notification when done |
 | `/keys` | Keybind cheat sheet |

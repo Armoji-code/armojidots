@@ -16,13 +16,17 @@ Item {
   onPlayerChanged: if (player) last = player
   readonly property var cur: player ?? last
 
-  implicitHeight: Theme.chipHeight
+  // vertical bars: everything but the title stacks (cava lies on its side)
+  readonly property bool vert: BarConfig.vertical
+  implicitHeight: vert ? (player ? row.implicitHeight + 12 : 0) : Theme.chipHeight
   readonly property real edgeRadius: Math.min(Theme.n("mediaRadius", 999), Theme.chipHeight / 2)   // matches the pill
-  implicitWidth: player ? pill.implicitWidth : 0
-  visible: implicitWidth > 0.5
+  implicitWidth: vert ? (player ? Theme.chipHeight : 0) : player ? pill.implicitWidth : 0
+  readonly property bool shown: implicitWidth > 0.5 && implicitHeight > 0.5
+  visible: shown
   opacity: player ? 1 : 0
   clip: true
   Behavior on implicitWidth { NumberAnimation { duration: Theme.animMs * 1.5; easing.type: Easing.OutCubic } }
+  Behavior on implicitHeight { NumberAnimation { duration: Theme.animMs * 1.5; easing.type: Easing.OutCubic } }
   Behavior on opacity { NumberAnimation { duration: Theme.animMs } }
 
   component Glyph: Text {
@@ -30,7 +34,6 @@ Item {
     color: Theme.fg
     font.family: Theme.font
     font.pixelSize: Theme.fontSize
-    anchors.verticalCenter: parent?.verticalCenter
     Behavior on color { ColorAnimation { duration: Theme.animMs } }
     MouseArea { anchors.fill: parent; onClicked: parent.clicked() }
   }
@@ -39,13 +42,18 @@ Item {
     id: pill
     height: parent.height
     implicitWidth: row.implicitWidth + 2 * Theme.n("mediaPad", 6)
-    width: implicitWidth
-    radius: Math.min(Theme.n("mediaRadius", 999), height / 2)
+    width: m.vert ? parent.width : implicitWidth
+    radius: Math.min(Theme.n("mediaRadius", 999), Math.min(width, height) / 2)
     color: Theme.chipBg
 
-    Row {
+    Grid {
       id: row
       anchors.centerIn: parent
+      columns: m.vert ? 1 : 99
+      rowSpacing: 6
+      topPadding: m.vert ? 4 : 0   // cava's first bar off the pill's rounded top
+      verticalItemAlignment: Grid.AlignVCenter
+      horizontalItemAlignment: Grid.AlignHCenter
 
       // cava as rounded bars; media.sh prints levels 0-7 as block chars
       Item {
@@ -53,10 +61,10 @@ Item {
         property var levels: Array(10).fill(0)
         readonly property real barW: 3
         readonly property real maxH: Theme.chipHeight - 8
-        width: 10 + levels.length * (barW + 2) - 2 + 6
-        height: maxH
-        anchors.verticalCenter: parent.verticalCenter
+        width: m.vert ? maxH : 10 + levels.length * (barW + 2) - 2 + 6
+        height: m.vert ? levels.length * (barW + 2) - 2 : maxH
         Row {
+          visible: !m.vert
           x: 10
           anchors.bottom: parent.bottom
           spacing: 2
@@ -73,6 +81,23 @@ Item {
             }
           }
         }
+        Column {   // vertical bar: bars grow sideways from the centre
+          visible: m.vert
+          anchors.horizontalCenter: parent.horizontalCenter
+          spacing: 2
+          Repeater {
+            model: cava.levels.length
+            Rectangle {
+              required property int index
+              anchors.horizontalCenter: parent?.horizontalCenter
+              height: cava.barW
+              width: cava.barW + (cava.maxH - cava.barW) * cava.levels[index] / 7
+              radius: Math.min(pill.radius, height / 2)
+              color: Theme.col("cava", "accent")
+              Behavior on width { NumberAnimation { duration: 60 } }
+            }
+          }
+        }
         Process {
           running: true
           command: ["setpriv", "--pdeathsig", "TERM", Quickshell.env("HOME") + "/.config/waybar/scripts/media.sh", "cava"]
@@ -81,18 +106,17 @@ Item {
           }
         }
       }
-      Glyph { text: "󰒮"; leftPadding: 4; rightPadding: 4; onClicked: m.cur?.previous() }
+      Glyph { text: "󰒮"; leftPadding: m.vert ? 0 : 4; rightPadding: m.vert ? 0 : 4; onClicked: m.cur?.previous() }
       Glyph {
         text: m.cur?.isPlaying ? "󰏤" : "󰐊"
-        leftPadding: 4; rightPadding: 4
+        leftPadding: m.vert ? 0 : 4; rightPadding: m.vert ? 0 : 4
         color: Theme.col("playpause", "accent")
         onClicked: m.cur?.togglePlaying()
       }
-      Glyph { text: "󰒭"; leftPadding: 4; rightPadding: 9; onClicked: m.cur?.next() }
+      Glyph { text: "󰒭"; leftPadding: m.vert ? 0 : 4; rightPadding: m.vert ? 0 : 9; onClicked: m.cur?.next() }
 
       Item {
         width: 22; height: 22
-        anchors.verticalCenter: parent.verticalCenter
         ClippingRectangle {
           width: 22; height: 22; radius: Math.min(pill.radius, 11)
           color: Theme.accentDim
@@ -125,11 +149,12 @@ Item {
 
       Item {
         id: infoBox
+        visible: !m.vert
         width: info.width; height: info.height
-        anchors.verticalCenter: parent.verticalCenter
         MouseArea { id: infoMa; anchors.fill: parent; hoverEnabled: true; onClicked: m.cur?.togglePlaying() }
         TipHost {
           target: infoBox
+          side: BarConfig.popSide
           hovered: infoMa.containsMouse
           text: (m.cur?.trackTitle ?? "") + (m.cur?.trackArtist ? " — " + m.cur.trackArtist : "")
         }
