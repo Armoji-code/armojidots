@@ -35,7 +35,8 @@ grim slurp wl-clipboard wl-mirror wlsunset jq cava playerctl wireplumber
 brightnessctl libnotify python python-pillow xdg-utils curl
 pavucontrol nemo bluetuith-bin nwg-displays
 adw-gtk-theme bibata-cursor-theme inter-font ttf-roboto ttf-roboto-mono
-ttf-geist ttf-geist-mono ttf-jetbrains-mono-nerd"
+ttf-geist ttf-geist-mono ttf-jetbrains-mono-nerd
+sddm sddm-silent-theme weston"
 
 say()  { printf '\033[1;36m::\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33m!!\033[0m %s\n' "$*" >&2; }
@@ -88,6 +89,12 @@ uninstall() {
       link) [ -L "$path" ] && rm -f "$path" ;;
       sudo) [ "$NO_SYSTEM" = 1 ] || sudo rm -rf "$path" ;;
       gsettings) [ "$NO_SYSTEM" = 1 ] || gsettings reset org.gnome.desktop.interface "$path" 2>/dev/null || true ;;
+      dm)      # the display manager that was active before ours
+        [ "$NO_SYSTEM" = 1 ] || { sudo systemctl disable sddm 2>/dev/null; sudo systemctl enable "$path"; } ;;
+      sddm-on) [ "$NO_SYSTEM" = 1 ] || sudo systemctl disable sddm 2>/dev/null || true ;;
+      sddm-theme)   # theme.sh sddm-setup: put SilentSDDM back on its own config
+        [ "$NO_SYSTEM" = 1 ] || sudo sh -c '[ -f "$1/metadata.desktop.bak" ] && mv "$1/metadata.desktop.bak" "$1/metadata.desktop"
+          rm -f "$1/configs/armoji.conf" "$1/backgrounds/armoji.jpg"; rm -rf /usr/local/share/fonts/armojidots' sh "$path" ;;
     esac
   done
   rm -rf "$HOME/.config/armoji-shell" "$HOME/.config/armojidots"
@@ -203,6 +210,51 @@ system_setup() {
   fi
 }
 
+# SDDM + SilentSDDM as the login screen, on Wayland, kept in the palette /
+# style by theme.sh (sddm-setup). Another display manager is switched off and
+# comes back on --uninstall.
+login_setup() {
+  [ "$NO_SYSTEM" = 1 ] && return 0
+  [ -d /usr/share/sddm/themes/silent ] || { warn "SilentSDDM isn't installed — login screen left as is"; return 0; }
+  yes_no "Use SDDM with the SilentSDDM theme as your login screen, synced to your theme? Needs sudo" || return 0
+  cur=$(basename "$(readlink -f /etc/systemd/system/display-manager.service 2>/dev/null)" .service)
+  if [ "$cur" != sddm ]; then
+    if [ -n "$cur" ] && [ "$cur" != display-manager ]; then sudo systemctl disable "$cur"; record dm "$cur"
+    else record sddm-on -; fi
+    sudo systemctl enable sddm
+  fi
+  sudo mkdir -p /etc/sddm.conf.d /etc/pacman.d/hooks
+  sudo tee /etc/sddm.conf.d/10-armojidots.conf >/dev/null <<'EOF'
+# armojidots: SilentSDDM on Wayland (Weston kiosk draws the greeter, so no
+# Xorg stays running after login); colors / wallpaper / font from theme.sh
+[General]
+DisplayServer=wayland
+InputMethod=qtvirtualkeyboard
+GreeterEnvironment=QML2_IMPORT_PATH=/usr/share/sddm/themes/silent/components/,QT_IM_MODULE=qtvirtualkeyboard
+
+[Theme]
+Current=silent
+EOF
+  record sudo /etc/sddm.conf.d/10-armojidots.conf
+  # a theme package update rewrites metadata.desktop: point it back at ours
+  sudo tee /etc/pacman.d/hooks/armojidots-sddm.hook >/dev/null <<'EOF'
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Type = Package
+Target = sddm-silent-theme
+Target = sddm-silent-theme-git
+
+[Action]
+Description = armojidots: keep SilentSDDM on the theme-synced config
+When = PostTransaction
+Exec = /bin/sed -i "s|^ConfigFile=.*|ConfigFile=configs/armoji.conf|" /usr/share/sddm/themes/silent/metadata.desktop
+EOF
+  record sudo /etc/pacman.d/hooks/armojidots-sddm.hook
+  "$HOME/.config/sway/scripts/theme.sh" sddm-setup >/dev/null 2>&1 || warn "login screen sync failed (theme.sh sddm-setup)"
+  record sddm-theme /usr/share/sddm/themes/silent
+}
+
 install() {
   [ "$(id -u)" != 0 ] || die "run as your normal user, not root (sudo is asked when needed)"
   if [ "$REPO" != "$(readlink -f "$DOTS" 2>/dev/null || echo "$DOTS")" ]; then
@@ -218,6 +270,7 @@ install() {
     • link its configs into ~/.config with GNU Stow
     • ask your name (terminal greeting) and keyboard layouts
     • install its icon theme (wallpapers: your own, in ~/Pictures/Wallpapers)
+    • offer SDDM + SilentSDDM as the login screen, matched to your theme
   Undo any time with: ./install.sh --uninstall
 
 EOF
@@ -242,7 +295,8 @@ EOF
     record file "$HOME/.config/sway/cursor.conf"
     record file "$HOME/.config/environment.d/user-cursor.conf"
   fi
-  say "Installed. Log out and pick \"SwayFX\" (sway) in your display manager."
+  login_setup
+  say "Installed. Reboot (or log out) and pick \"SwayFX\" (sway) at the login screen."
 }
 
 case "${1:-}" in

@@ -40,7 +40,8 @@ the lock screen.
   the charger (performance when plugged in, balanced on battery, power saver at
   20% or below; manual changes stick until the next change), and low-battery
   warnings.
-- **Themed everywhere:** kitty, fish + starship, notifications, the lock screen, GTK
+- **Themed everywhere:** kitty, fish + starship, notifications, the lock screen,
+  the SDDM login screen (SilentSDDM, optional in the installer), GTK
   3/4 and the icon folders.
 
 ## Requirements
