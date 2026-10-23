@@ -52,5 +52,5 @@ else title="Update failed"; urg=critical; fi
 # "updating…" state) ends now
 ( act=$(notify-send -u "$urg" -i system-software-update -A open="Open log" \
           "$title" "$what · $(tail -n1 "$LOG" | cut -c1-120)")
-  [ "$act" = open ] && foot -e less +G "$LOG" ) >/dev/null 2>&1 &
+  [ "$act" = open ] && kitty less +G "$LOG" ) >/dev/null 2>&1 &
 exit $rc

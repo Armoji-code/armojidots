@@ -3,7 +3,7 @@
 if status is-interactive
     starship init fish | source
 
-    # foot: mark prompt starts so you can jump between prompts
+    # mark prompt starts (OSC 133) so the terminal can jump between prompts
     function mark_prompt_start --on-event fish_prompt
         echo -en "\e]133;A\e\\"
     end

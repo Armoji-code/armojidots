@@ -38,7 +38,7 @@ the lock screen.
   the charger (performance when plugged in, balanced on battery, power saver at
   20% or below; manual changes stick until the next change), and low-battery
   warnings.
-- **Themed everywhere:** kitty, foot, fish + starship, notifications, the lock screen, GTK
+- **Themed everywhere:** kitty, fish + starship, notifications, the lock screen, GTK
   3/4 and the icon folders.
 
 ## Requirements
@@ -158,7 +158,7 @@ shell picks up the changes by itself.
 | `shell/` | The Quickshell desktop shell (`qs -c armoji-shell`) |
 | `sway/` | SwayFX config and scripts: theme engine, OSD, mirroring, battery and activation watchers |
 | `styles/` | Style packs |
-| `kitty/`, `foot/` | Terminals |
+| `kitty/` | Terminal |
 | `fish/`, `starship/`, `fastfetch/` | Shell, prompt and greeting |
 | `swayidle/` | Idle policy (lock before sleep) |
 | `gtk/`, `cursor/`, `environment-d/`, `icons/` | GTK settings, cursor, session environment, sidebar icons |

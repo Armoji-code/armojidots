@@ -21,7 +21,7 @@ MANIFEST="$STATE/install.manifest"
 CONF="$HOME/.config/armojidots/user.conf"
 NO_SYSTEM=${ARMOJI_NO_SYSTEM:-0}
 
-STOW_PKGS="sway shell styles waybar elephant kitty foot swayidle fish fastfetch starship gtk cursor environment-d"
+STOW_PKGS="sway shell styles waybar elephant kitty swayidle fish fastfetch starship gtk cursor environment-d"
 # linked file by file: a folded ~/.local/share/icons would put every app's
 # icons (and the icon theme) inside the repo
 FILE_PKGS="icons"
@@ -29,7 +29,7 @@ FILE_PKGS="icons"
 # Everything the desktop calls, nothing else. Sorted into official repo vs
 # AUR at runtime (some are in CachyOS's repos but AUR-only on plain Arch).
 PACKAGES="swayfx-git swaysome swaybg swayidle swaylock autotiling
-quickshell qmltermwidget kitty foot fish starship fastfetch toilet stow
+quickshell qmltermwidget kitty fish starship fastfetch toilet stow
 elephant elephant-desktopapplications elephant-calc
 grim slurp wl-clipboard wl-mirror wlsunset jq cava playerctl wireplumber
 brightnessctl libnotify python python-pillow xdg-utils curl

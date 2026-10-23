@@ -7,6 +7,11 @@
 #    profile picked by hand stays until the next plug/unplug/low):
 #    charging → performance, on battery → balanced, ≤20% → power saver.
 
+# one per login: a copy left over from an earlier sway session keeps the lock
+# (and keeps working), so a new session's copy doesn't double every warning
+exec 9> "${XDG_RUNTIME_DIR:-/tmp}/battery-watch.lock"
+flock -n 9 || exit 0
+
 BAT=${BAT:-$(ls -d /sys/class/power_supply/BAT* 2>/dev/null | head -n1)}   # env overrides: testing
 [ -n "$BAT" ] || exit 0
 PP=${PP:-/sys/firmware/acpi/platform_profile}   # low-power / balanced / performance

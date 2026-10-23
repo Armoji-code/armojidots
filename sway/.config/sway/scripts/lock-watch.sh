@@ -4,6 +4,10 @@
 # permission dance needed. (Fn Lock has no such sysfs attribute on this
 # ThinkPad's thinkpad_acpi driver, so it can't be watched the same way.)
 
+# one per login (see battery-watch.sh)
+exec 9> "${XDG_RUNTIME_DIR:-/tmp}/lock-watch.lock"
+flock -n 9 || exit 0
+
 CAPS=$(ls /sys/class/leds/*::capslock/brightness 2>/dev/null | head -n1)
 NUM=$(ls /sys/class/leds/*::numlock/brightness 2>/dev/null | head -n1)
 
