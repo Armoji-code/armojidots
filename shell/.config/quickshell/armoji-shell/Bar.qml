@@ -110,8 +110,16 @@ Variants {
           id: gCenter
           zone: "center"; output: bar.scr.name; plain: bar.mode !== "pills"; editor: editor
           visible: !empty || BarConfig.editing
-          x: (body.width - width) / 2
-          y: (body.height - height) / 2
+          // centred, unless that overlaps an end zone: then pushed away from
+          // it (a gap off the end zone); with no room either side, start wins
+          readonly property real pos: {
+            const len = bar.vert ? body.height : body.width, size = bar.vert ? height : width, gap = 8
+            const lo = !gLeft.visible ? body.inset : (bar.vert ? gLeft.y + gLeft.height : gLeft.x + gLeft.width) + gap
+            const hi = (!gRight.visible ? len - body.inset : (bar.vert ? gRight.y : gRight.x) - gap) - size
+            return Math.max(lo, Math.min((len - size) / 2, hi))
+          }
+          x: bar.vert ? (body.width - width) / 2 : pos
+          y: bar.vert ? pos : (body.height - height) / 2
         }
         Group {
           id: gRight
