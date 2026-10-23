@@ -18,12 +18,8 @@ end
 function __armoji_fetch
     switch (__armoji_tier)
         case mini
-            set_color green
-            # name from install.sh (~/.config/armojidots/user.conf), else $USER
-            set -l name (string replace -rf '^NAME=' '' < ~/.config/armojidots/user.conf 2>/dev/null)
-            test -n "$name"; or set name $USER
-            echo "HI "(string upper -- $name)" ▪"
-            set_color normal
+            # sidebars / tiny windows: no greeting (the sidebar's colors only
+            # refresh on a shell restart, so a colored line went stale)
         case stacked
             # cramped: logo on top, specs below so they don't collide
             fastfetch --logo-position top
