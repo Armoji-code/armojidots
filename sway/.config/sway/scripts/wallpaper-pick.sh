@@ -1,28 +1,12 @@
 #!/bin/sh
 # Set the wallpaper and persist it via the `current` symlink that swaybg and
 # theme.sh both read. Wallpapers live in ~/Pictures/Wallpapers.
-#   wallpaper-pick.sh "<path>"   set that image directly
-#                                (used by spotlight's /wallpaper page)
-#   wallpaper-pick.sh pipes      live pipes wallpaper (quickshell Wallpaper.qml)
-#   wallpaper-pick.sh            no arg → dmenu picker (fallback)
-WALLDIR="$HOME/Pictures/Wallpapers"
+#   wallpaper-pick.sh "<path>"   set that image (spotlight's /wallpaper page)
 LINK="$HOME/dotfiles/wallpapers/current"
-LIVE="$HOME/.local/state/armojidots/live-wallpaper"
 
-if [ "$1" = pipes ]; then echo pipes > "$LIVE"; exit 0; fi
-
-if [ -n "$1" ]; then
-  pick="$1"
-else
-  name=$(find "$WALLDIR" -maxdepth 1 -type f \
-           \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) \
-           -printf '%f\n' | sort | walker --dmenu -p "wallpaper ❯")
-  [ -z "$name" ] && exit 0
-  pick="$WALLDIR/$name"
-fi
+pick="$1"
 [ -f "$pick" ] || { notify-send "wallpaper" "not found: $pick"; exit 1; }
 
-rm -f "$LIVE"
 mkdir -p "$(dirname "$LINK")"
 ln -sf "$pick" "$LINK"
 pkill -x swaybg

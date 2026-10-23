@@ -1,8 +1,14 @@
 # ── armojidots · starship ───────────────────────────
-# Clean single-line prompt: dir, git, duration.
+# Two-line pill prompt in tonal steps of the theme accent:
+#   ( 󰉋 dir ▶  branch ▶ )            󰌠 3.14  󰔟 2s
+#   ❯
+# Needs a Nerd Font (JetBrainsMono Nerd Font is every terminal's fallback).
 
 add_newline = true
-format = "$directory$git_branch$git_status$cmd_duration$line_break$character"
+format = """
+[](dir_bg)$directory$git_branch$git_status\
+$fill$python$nodejs$rust$golang$cmd_duration
+$character"""
 
 # Colors from the active palette: theme.sh writes a copy of this file with
 # these hexes swapped for the palette's (~/.config/armoji-shell/starship.toml,
@@ -11,20 +17,64 @@ format = "$directory$git_branch$git_status$cmd_duration$line_break$character"
 palette = "armoji"
 
 [directory]
-style = "bold dir"
+# outside a repo the dir segment ends the pill; inside, it leads into git
+format = "[ 󰉋 $path$read_only ]($style)[](fg:dir_bg)"
+repo_root_format = "[ 󰉋 $before_root_path$repo_root$path$read_only ]($style)[](fg:dir_bg bg:git_bg)"
+style = "fg:pill_fg bg:dir_bg"
+before_repo_root_style = "fg:pill_fg bg:dir_bg"
+repo_root_style = "bold fg:pill_fg bg:dir_bg"
+read_only = " 󰌾"
 truncation_length = 3
+truncation_symbol = "…/"
 truncate_to_repo = true
 
+[directory.substitutions]
+"Documents" = "󰈙"
+"Downloads" = "󰇚"
+"Pictures" = "󰋩"
+"Music" = "󰝚"
+"Projects" = "󰭽"
+
 [git_branch]
-symbol = " "
-style = "branch"
+format = "[ $symbol$branch ]($style)"
+symbol = " "
+style = "fg:git_fg bg:git_bg"
 
 [git_status]
-style = "status"
+# always renders inside a repo (the arrow), so it closes the pill
+format = "[($all_status$ahead_behind )]($style)[](fg:git_bg)"
+style = "fg:git_fg bg:git_bg"
+
+[fill]
+symbol = " "
+
+[python]
+format = "[ $symbol$version]($style)"
+symbol = "󰌠 "
+version_format = "${major}.${minor}"
+style = "dim"
+
+[nodejs]
+format = "[ $symbol$version]($style)"
+symbol = "󰎙 "
+version_format = "${major}.${minor}"
+style = "dim"
+
+[rust]
+format = "[ $symbol$version]($style)"
+symbol = "󱘗 "
+version_format = "${major}.${minor}"
+style = "dim"
+
+[golang]
+format = "[ $symbol$version]($style)"
+symbol = "󰟓 "
+version_format = "${major}.${minor}"
+style = "dim"
 
 [cmd_duration]
 min_time = 2000
-format = "took [$duration]($style) "
+format = "[  󰔟 $duration]($style)"
 style = "dim"
 
 [character]
@@ -33,9 +83,10 @@ error_symbol = "[❯](bold err)"
 
 # keep last: theme.sh replaces everything from here down
 [palettes.armoji]
-dir = "#56b6c2"
-branch = "#c678dd"
-status = "#e5c07b"
+dir_bg = "#5480f2"
+git_bg = "#3957a4"
+pill_fg = "#121212"
+git_fg = "#d4d4d4"
 ok = "#98c379"
 err = "#e06c75"
 dim = "#8c8c8c"

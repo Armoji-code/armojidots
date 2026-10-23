@@ -36,7 +36,7 @@ function paths(ctx) {
 
 function power(arg) {
   const a = arg.trim().toLowerCase()
-  return [["Lock", "system-lock-screen", "swaylock -f"],
+  return [["Lock", "system-lock-screen", "~/.config/sway/scripts/lock.sh"],
           ["Logout", "system-log-out", "swaymsg exit"],
           ["Suspend", "system-suspend", "systemctl suspend"],
           ["Reboot", "system-reboot", "systemctl reboot"],
@@ -49,17 +49,21 @@ function update(ctx, arg) {
   const a = arg.trim().toLowerCase()
   const tools = ctx.tools || []
   const aur = ["yay", "paru"].find(t => tools.includes(t))   // AUR helper, if any
-  // run inside Spotlight's box (SpotTerm.qml); Kernel Manager is its own GUI
-  return [["Full System Update", "system-software-update", "page", "term:" + (aur ? aur + " -Syu" : "sudo pacman -Syu")],
+  const fp = tools.includes("flatpak")
+  // run inside Spotlight's box (SpotTerm.qml), or in the background (PageUpdates
+  // toggle → update-bg.sh <bg>); Kernel Manager is its own GUI
+  return [["Full System Update", "system-software-update", "page", "term:" + (aur ? aur + " -Syu" : "sudo pacman -Syu") + (fp ? " && flatpak update" : ""), "full"],
           // pull the latest armojidots; stowed symlinks pick the new files up
           // (the shell reloads itself — open sidebar sessions restart)
-          ["Dotfiles", "folder-git", "page", "term:cd ~/dotfiles && git pull --ff-only"],
-          ["Pacman", "system-software-update", "page", "term:sudo pacman -Syu"],
-          ["AUR (" + aur + ")", "system-software-update", "page", "term:" + aur + " -Sua"],
-          ["Kernel", "org.cachyos.KernelManager", "cmd", "cachyos-kernel-manager"]]
-    .filter(o => (o[0] !== "Kernel" || tools.includes("cachyos-kernel-manager")) && (aur || !o[0].startsWith("AUR")))
+          ["Dotfiles", "folder-git", "page", "term:cd ~/dotfiles && git pull --ff-only", "dotfiles"],
+          ["Pacman", "system-software-update", "page", "term:sudo pacman -Syu", "pacman"],
+          ["AUR (" + aur + ")", "system-software-update", "page", "term:" + aur + " -Sua", "aur"],
+          ["Flatpak", "system-software-update", "page", "term:flatpak update", "flatpak"],
+          ["Kernel", "org.cachyos.KernelManager", "cmd", "cachyos-kernel-manager", ""]]
+    .filter(o => (o[0] !== "Kernel" || tools.includes("cachyos-kernel-manager"))
+              && (aur || !o[0].startsWith("AUR")) && (fp || o[0] !== "Flatpak"))
     .filter(o => o[0].toLowerCase().includes(a))
-    .map(o => item(o[0], "", o[1], o[2], o[3]))
+    .map(o => Object.assign(item(o[0], "", o[1], o[2], o[3]), { bg: o[4] }))
 }
 
 function styles(ctx, filter) {
@@ -139,7 +143,9 @@ function keys(arg) {
 // prefixes: /w → /wifi, /we → /web, /wa → /wallpaper.
 const COMMANDS = [["/settings", "hub"], ["/wifi", "wifi"], ["/web", ""], ["/wallpaper", "wallpaper"],
   ["/bluetooth", "bluetooth"], ["/monitors", "monitors"], ["/displays", "monitors"], ["/style", "style"],
-  ["/tone", "style"], ["/colors", "colors"], ["/power", "power"], ["/keys", "keys"], ["/update", "updates"]]
+  ["/tone", "style"], ["/colors", "colors"], ["/customize", "customize"], ["/cursor", "cursor"],
+  ["/fonts", "fonts"], ["/icons", "icons"], ["/idle", "idle"], ["/layout", "layout"],
+  ["/power", "power"], ["/keys", "keys"], ["/update", "updates"]]
 // the command a typed head means: exact or by prefix; "/" alone = /settings
 function command(head) {
   head = head.toLowerCase()

@@ -8,10 +8,13 @@ import QtQuick
 import Quickshell
 
 ShellRoot {
-  Wallpaper {}
   Bar {}
   Osd {}
   Dock {}
   Spotlight {}
   Sidebar {}
+  NotifPopups {}
+  NotifCenter {}
+  Lock { id: lock }
+  Screensaver { locked: lock.locked }
 }

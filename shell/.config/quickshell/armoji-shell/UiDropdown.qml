@@ -7,6 +7,7 @@ Rectangle {
   id: d
   property var options: []          // labels
   property int current: -1
+  property bool fontPreview: false   // draw each option in its own font (font lists)
   signal picked(int index)
   implicitWidth: 180
   implicitHeight: 32
@@ -65,7 +66,7 @@ Rectangle {
           anchors { left: parent.left; leftMargin: 9; verticalCenter: parent.verticalCenter }
           text: parent.modelData
           color: Theme.fg
-          font.family: Theme.font
+          font.family: d.fontPreview ? parent.modelData : Theme.font
           font.pixelSize: 13
         }
         MouseArea {

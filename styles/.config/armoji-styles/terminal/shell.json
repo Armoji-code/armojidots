@@ -104,5 +104,6 @@
   "sidebarGap": 8,
   "mediaRadius": 0,
   "tipRadius": 0,
-  "wsBrackets": true
+  "wsBrackets": true,
+  "notifImgRadius": 0
 }

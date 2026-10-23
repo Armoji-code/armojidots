@@ -7,7 +7,7 @@
 # Viber pings urgent on every incoming message; auto-teleporting to it each
 # time would be constantly disruptive, so it's excluded here. It still gets
 # the normal urgent-border flash, and its own popup toast is separately
-# killed in favor of swaync (see rules.conf) — this script only concerns
+# killed in favor of the shell's notification (see rules.conf) — this script only concerns
 # the "jump to it" behavior.
 
 is_excepted() {

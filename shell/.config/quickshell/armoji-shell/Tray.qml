@@ -25,9 +25,13 @@ Rectangle {
         source: modelData.icon
         TipHost {
           target: ic
-          hovered: ma.containsMouse
+          hovered: ma.containsMouse && !menu.active
           text: [ic.modelData.tooltipTitle || ic.modelData.title, ic.modelData.tooltipDescription]
             .filter(s => s).join("<br>")
+        }
+        LazyLoader {
+          id: menu
+          TrayMenu { target: ic; menu: ic.modelData.menu; onDone: menu.active = false }
         }
         MouseArea {
           id: ma
@@ -35,10 +39,8 @@ Rectangle {
           hoverEnabled: true
           acceptedButtons: Qt.LeftButton | Qt.RightButton
           onClicked: e => {
-            if (e.button === Qt.RightButton && modelData.hasMenu) {
-              const p = parent.mapToItem(QsWindow.window.contentItem, 0, parent.height)
-              modelData.display(QsWindow.window, p.x, p.y + 6)
-            } else modelData.activate()
+            if (e.button === Qt.RightButton && modelData.hasMenu) menu.active = true
+            else modelData.activate()
           }
         }
       }

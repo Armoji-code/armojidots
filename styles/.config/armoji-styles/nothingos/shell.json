@@ -95,5 +95,6 @@
   "clockFont": "Bitcount Grid Single",
   "numFont": "Bitcount Grid Single",
   "wsSize": 15,
-  "termFont": "Geist Mono"
+  "termFont": "Geist Mono",
+  "notifImgRadius": 8
 }

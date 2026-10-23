@@ -1,7 +1,5 @@
 # ── armojidots · swayidle ───────────────────────────
-# 5 min idle → lock. 10 min → screen off (on again on activity).
-# Always lock before the system sleeps.
+# Always lock before the system sleeps. The idle timeouts (screensaver,
+# auto-lock, screen off) live in the shell: Screensaver.qml, Idle.qml.
 
-timeout 300 'swaylock -f'
-timeout 600 'swaymsg "output * power off"' resume 'swaymsg "output * power on"'
-before-sleep 'swaylock -f'
+before-sleep '~/.config/sway/scripts/lock.sh'

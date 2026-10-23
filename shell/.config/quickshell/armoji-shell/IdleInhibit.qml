@@ -1,13 +1,10 @@
-// 󰅶 = staying awake (default, auto-lock off) · 󰒲 = auto-lock armed
+// 󰅶 = staying awake (default, auto-lock off) · 󰒲 = auto-lock armed (Idle.qml)
 import QtQuick
-import Quickshell
-import Quickshell.Wayland
 
 Chip {
-  IdleInhibitor { id: inh; enabled: true; window: QsWindow.window }
   icon: true
-  text: inh.enabled ? "󰅶" : "󰒲"
-  fg: inh.enabled ? Theme.col("idleOn", "accent") : Theme.fg
-  tip: inh.enabled ? "auto-lock: OFF (click to arm)" : "auto-lock: ON (5m lock, 10m screen off)"
-  onClicked: inh.enabled = !inh.enabled
+  text: Idle.lockOn ? "󰒲" : "󰅶"
+  fg: Idle.lockOn ? Theme.fg : Theme.col("idleOn", "accent")
+  tip: Idle.lockOn ? "auto-lock: ON (locks after " + Idle.lockMin + "m)" : "auto-lock: OFF (click to arm)"
+  onClicked: Idle.set("lockOn", !Idle.lockOn)
 }

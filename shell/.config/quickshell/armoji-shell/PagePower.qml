@@ -12,7 +12,7 @@ Item {
   Timer { id: disarm; interval: 3000; onTriggered: pw.armed = "" }
 
   readonly property var acts: [
-    ["Lock", "system-lock-screen", "swaylock -f", false],
+    ["Lock", "system-lock-screen", "~/.config/sway/scripts/lock.sh", false],
     ["Suspend", "system-suspend", "systemctl suspend", false],
     ["Logout", "system-log-out", "swaymsg exit", true],
     ["Reboot", "system-reboot", "systemctl reboot", true],

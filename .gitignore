@@ -18,10 +18,9 @@ foot/.config/foot/style.ini
 gtk/.config/gtk-*/gtk.css
 sway/.config/sway/colors.conf
 sway/.config/sway/style-effects.conf
-swaylock/
-swaync/.config/swaync/colors.css
-swaync/.config/swaync/style-tokens.css
-walker/.config/walker/themes/armoji/colors.css
-walker/.config/walker/themes/armoji/style-tokens.css
 kitty/.config/kitty/style.conf
 kitty/.config/kitty/theme-colors.conf
+
+# per-user overrides written by theme.sh (cursor / fonts)
+sway/.config/sway/cursor.conf
+environment-d/.config/environment.d/user-cursor.conf

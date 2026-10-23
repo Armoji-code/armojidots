@@ -32,15 +32,17 @@ Scope {
   property int sel: 0
   property var ctx: ({ home: Quickshell.env("HOME"), style: "material", packs: {}, wallpapers: [], tools: [] })
 
-  // page in the box: "" (results) | hub | wifi | bluetooth | monitors | style |
-  // colors | wallpaper | power | keys | updates | term:<cmd>
+  // page in the box: "" (results) | hub | wifi | bluetooth | monitors |
+  // customize (+ its tabs: style colors wallpaper fonts cursor icons) | idle |
+  // layout | power | keys | updates | term:<cmd>
   property string page: ""
   property string termTitle: ""
   property var pageObj: null           // the loaded Page*.qml
   readonly property bool isTerm: page.startsWith("term:")
   readonly property bool busy: isTerm && (pageObj?.busy ?? false)
   readonly property var titles: ({ hub: "Settings", wifi: "Wi-Fi", bluetooth: "Bluetooth", monitors: "Monitors",
-    style: "Style", colors: "Colors", wallpaper: "Wallpaper", power: "Power", keys: "Shortcuts",
+    customize: "Customize", style: "Customize", colors: "Customize", wallpaper: "Customize", fonts: "Customize",
+    cursor: "Customize", icons: "Customize", idle: "Idle", layout: "Layout", power: "Power", keys: "Shortcuts",
     updates: "Updates" })
   readonly property string pageTitle: isTerm ? termTitle : titles[page] ?? ""
   // Enter on a page runs the typed argument (/colors ruby) — the first
@@ -94,7 +96,7 @@ Scope {
     command: ["sh", "-c", 'cat ~/.local/state/armojidots/style 2>/dev/null; echo "\n@@@";'
       + ' for d in ~/.config/armoji-styles/*/; do echo "@@$(basename "$d")"; cat "$d/pack.conf" 2>/dev/null; done;'
       + ' echo "@@@"; ls ~/Pictures/Wallpapers 2>/dev/null;'
-      + ' echo "@@@"; for c in yay paru cachyos-kernel-manager; do command -v $c >/dev/null && echo $c; done']
+      + ' echo "@@@"; for c in yay paru flatpak cachyos-kernel-manager; do command -v $c >/dev/null && echo $c; done']
     stdout: StdioCollector {
       onStreamFinished: {
         const parts = text.split("@@@\n")
@@ -359,8 +361,10 @@ Scope {
               id: pageLoader
               y: header.height + 10
               active: sp.page !== ""
-              sourceComponent: ({ hub: hubC, wifi: wifiC, bluetooth: btC, monitors: monC, style: styleC,
-                                  colors: colorsC, wallpaper: wallC, power: powerC, keys: keysC,
+              // the look tabs share one Customize page (it picks the tab from sp.page)
+              sourceComponent: ({ hub: hubC, wifi: wifiC, bluetooth: btC, monitors: monC, customize: custC,
+                                  style: custC, colors: custC, wallpaper: custC, fonts: custC, cursor: custC,
+                                  icons: custC, idle: idleC, layout: layoutC, power: powerC, keys: keysC,
                                   updates: updC })[sp.page] ?? (sp.isTerm ? termC : null)
               onLoaded: sp.pageObj = item
               // back to results: the search pill takes the keys again
@@ -371,9 +375,9 @@ Scope {
           Component { id: wifiC; PageWifi { host: sp } }
           Component { id: btC; PageBluetooth { host: sp } }
           Component { id: monC; PageMonitors { host: sp } }
-          Component { id: styleC; PageStyle { host: sp } }
-          Component { id: colorsC; PageColors { host: sp } }
-          Component { id: wallC; PageWallpaper { host: sp } }
+          Component { id: custC; PageCustomize { host: sp } }
+          Component { id: idleC; PageIdle { host: sp } }
+          Component { id: layoutC; PageLayout { host: sp } }
           Component { id: powerC; PagePower { host: sp } }
           Component { id: keysC; PageKeys { host: sp } }
           Component { id: updC; PageUpdates { host: sp } }

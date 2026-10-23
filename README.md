@@ -1,10 +1,10 @@
 # armojidots
 
 A complete [SwayFX](https://github.com/wlrfx/swayfx) desktop: bar, dock,
-launcher, settings, OSD and terminal sidebars, all built as one
+launcher, settings, OSD, notifications, lock screen and terminal sidebars, all built as one
 [Quickshell](https://quickshell.org) process. Switchable style packs and color
-palettes restyle everything at once, from the shell to terminals, GTK apps,
-notifications and the lock screen.
+palettes restyle everything at once: the shell, terminals, GTK apps and
+the lock screen.
 
 ![Material style with the Spotlight launcher](assets/screenshots/01-material-spotlight.jpg)
 
@@ -14,30 +14,31 @@ notifications and the lock screen.
 | **Nothing OS** · settings hub | **Aqua** · palette + custom color picker |
 | ![Terminal style, style picker](assets/screenshots/04-terminal-style.jpg) | ![Material style, power menu](assets/screenshots/05-material-power.jpg) |
 | **Terminal** · style packs and tone | **Material** · power menu, colors taken from the wallpaper |
-| ![Live pipes wallpaper](assets/screenshots/06-nothingos-pipes.jpg) | ![Volume OSD](assets/screenshots/07-aqua-osd.jpg) |
-| Live **pipes** wallpaper in the theme colors | Volume / brightness **OSD** |
+| ![Pipes screensaver](assets/screenshots/06-nothingos-pipes.jpg) | ![Volume OSD](assets/screenshots/07-aqua-osd.jpg) |
+| **Pipes** screensaver in the theme colors | Volume / brightness **OSD** |
 
 ![The bar in all four styles](assets/screenshots/09-bars.jpg)
 
 ## Features
 
-- **One shell process:** bar, dock, OSD, launcher and sidebars in QML, animated
+- **One shell process:** bar, dock, OSD, launcher, notifications and sidebars in QML, animated
   throughout, and reloaded live when the theme changes.
 - **Spotlight (`Win+D`):** app grid, fuzzy search, inline math, and a settings
-  hub for Wi-Fi, Bluetooth, monitors, style, colors, wallpaper, power, updates
+  hub for Wi-Fi, Bluetooth, monitors, customization (style, colors, wallpaper,
+  fonts, cursor, icons), idle, power, updates
   and shortcuts, all usable by mouse or keyboard.
 - **Style packs:** Material (default), Nothing OS, Aqua and Terminal. Each one
   defines shapes, spacing, fonts and translucency through tokens.
 - **Palettes:** take the accent from the wallpaper, pick a preset, or choose
   any color. Set the tone (light / heavy / loud) and the surface opacity.
-- **Live wallpaper:** a pipes.sh-style animation drawn in the current palette.
+- **Screensaver:** a pipes.sh-style animation in the current palette after 2 minutes idle.
 - **Terminal sidebars:** fish (`Win+R`) or Claude Code (`Win+Shift+R`) in a
   glass panel that slides in from any screen edge.
 - **Laptop-aware:** display mirroring or extending, power profiles that follow
   the charger (performance when plugged in, balanced on battery, power saver at
   20% or below; manual changes stick until the next change), and low-battery
   warnings.
-- **Themed everywhere:** kitty, foot, fish + starship, swaync, swaylock, GTK
+- **Themed everywhere:** kitty, foot, fish + starship, notifications, the lock screen, GTK
   3/4 and the icon folders.
 
 ## Requirements
@@ -63,8 +64,8 @@ The installer:
 3. links the configs into `~/.config` with [GNU Stow](https://www.gnu.org/software/stow/);
 4. asks for your **name** (shown in the terminal greeting) and your **keyboard
    layouts**;
-5. installs the icon theme and starts you on the live pipes wallpaper (no
-   wallpapers are bundled; add your own to `~/Pictures/Wallpapers`);
+5. installs the icon theme (no wallpapers are bundled; add your own to
+   `~/Pictures/Wallpapers`);
 6. optionally applies two small system tweaks (sudo): the sidebar terminal
    color scheme, and normal CPU priority for the shell under `ananicy-cpp`.
 
@@ -115,11 +116,14 @@ the header shows what Enter will do.
 | `/wifi` | Networks; connect, disconnect, forget, password |
 | `/bluetooth` | Devices; pair, connect, trust, forget, battery |
 | `/monitors` | Mirror / extend, drag to arrange, resolution, refresh, scale, rotation (10 s keep-or-revert) |
-| `/style` · `/tone` | Style packs and tone |
-| `/colors` | Palettes, custom color picker, opacity |
-| `/wallpaper` | Wallpapers from `~/Pictures/Wallpapers`, plus the live pipes wallpaper |
+| `/customize` | Style, colors, wallpaper, fonts, cursor and icons, one tab each |
+| `/style` · `/tone` | Customize › Style: style packs and tone |
+| `/colors` | Customize › Colors: palettes, custom color picker, opacity |
+| `/wallpaper` | Customize › Wallpaper: images from `~/Pictures/Wallpapers` |
+| `/fonts` · `/cursor` · `/icons` | Customize › Fonts (interface, monospace, display), cursor theme and size, icon theme and folder color |
+| `/idle` | Screensaver, auto-lock and screen-off, each on/off with a delay |
 | `/power` | Lock, suspend, logout, reboot, shutdown |
-| `/update` | System / AUR / dotfiles updates in a terminal inside the box |
+| `/update` | System / AUR / Flatpak / dotfiles updates in a terminal inside the box, or in the background with a notification when done |
 | `/keys` | Keybind cheat sheet |
 | `/web <query>` | Web search |
 | `23*7` | Inline math; Enter copies the result |
@@ -128,6 +132,10 @@ the header shows what Enter will do.
 
 - **Style and colors:** use Spotlight (`/style`, `/colors`), or
   `~/.config/sway/scripts/theme.sh style <pack>` and `theme.sh apply <palette|#hex>`.
+- **Fonts, cursors, icons:** drop fonts, cursor themes or icon themes into
+  `~/Themes/Fonts`, `~/Themes/Cursors` or `~/Themes/Icons`; every app can use
+  them, and they show up in Customize. Font choices reset to the style's own
+  when you switch style.
 - **Wallpapers:** put images in `~/Pictures/Wallpapers` and pick them with
   `/wallpaper`. The `wallpaper` palette follows the current image. The
   wallpapers in the screenshots belong to their artists and aren't included.
@@ -152,19 +160,19 @@ shell picks up the changes by itself.
 | `styles/` | Style packs |
 | `kitty/`, `foot/` | Terminals |
 | `fish/`, `starship/`, `fastfetch/` | Shell, prompt and greeting |
-| `swaync/`, `swayidle/` | Notifications and idle policy (the swaylock config is generated) |
+| `swayidle/` | Idle policy (lock before sleep) |
 | `gtk/`, `cursor/`, `environment-d/`, `icons/` | GTK settings, cursor, session environment, sidebar icons |
 | `waybar/` | Helper scripts used by the bar (layout, media, power profile, blue-light) |
-| `walker/` | Search backend config (elephant) and the dmenu used by script pickers |
+| `elephant/` | App search backend config (Spotlight) |
 | `assets/` | Icon theme archive and screenshots |
 
-Generated files (colors, style tokens, the swaylock config, the greeting logo)
+Generated files (colors, style tokens, the greeting logo)
 are written by `theme.sh` / `install.sh` and are not tracked.
 
 ## Credits
 
 - [SwayFX](https://github.com/wlrfx/swayfx), [Quickshell](https://quickshell.org),
-  [elephant](https://github.com/abenz1267/elephant) / [walker](https://github.com/abenz1267/walker)
+  [elephant](https://github.com/abenz1267/elephant)
 - [Slot-Multicolor-Dark-Icons](https://github.com/L4ki/Slot-Plasma-Themes) by L4ki (bundled, GPL-3.0), Bibata cursor
 - Fonts: Inter, Roboto, Geist, JetBrains Mono Nerd Font, Bitcount Grid Single
 

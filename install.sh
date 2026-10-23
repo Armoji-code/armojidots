@@ -21,19 +21,18 @@ MANIFEST="$STATE/install.manifest"
 CONF="$HOME/.config/armojidots/user.conf"
 NO_SYSTEM=${ARMOJI_NO_SYSTEM:-0}
 
-STOW_PKGS="sway shell styles waybar walker kitty foot swaync swayidle fish fastfetch starship gtk cursor environment-d"
+STOW_PKGS="sway shell styles waybar elephant kitty foot swayidle fish fastfetch starship gtk cursor environment-d"
 # linked file by file: a folded ~/.local/share/icons would put every app's
 # icons (and the icon theme) inside the repo
 FILE_PKGS="icons"
 
 # Everything the desktop calls, nothing else. Sorted into official repo vs
 # AUR at runtime (some are in CachyOS's repos but AUR-only on plain Arch).
-PACKAGES="swayfx-git swaysome swaybg swayidle swaylock-effects swaync autotiling
+PACKAGES="swayfx-git swaysome swaybg swayidle swaylock autotiling
 quickshell qmltermwidget kitty foot fish starship fastfetch toilet stow
-elephant elephant-desktopapplications elephant-calc elephant-runner
-elephant-websearch elephant-menus walker-bin
+elephant elephant-desktopapplications elephant-calc
 grim slurp wl-clipboard wl-mirror wlsunset jq cava playerctl wireplumber
-brightnessctl libnotify imagemagick python xdg-utils gtk3 curl
+brightnessctl libnotify python python-pillow xdg-utils curl
 pavucontrol nemo bluetuith-bin nwg-displays
 adw-gtk-theme bibata-cursor-theme inter-font ttf-roboto ttf-roboto-mono
 ttf-geist ttf-geist-mono ttf-jetbrains-mono-nerd"
@@ -85,6 +84,7 @@ uninstall() {
         fi ;;
       file) rm -f "$path" ;;
       dir)  rm -rf "$path" ;;
+      emptydir) rmdir "$path" 2>/dev/null || true ;;   # user content stays
       link) [ -L "$path" ] && rm -f "$path" ;;
       sudo) [ "$NO_SYSTEM" = 1 ] || sudo rm -rf "$path" ;;
       gsettings) [ "$NO_SYSTEM" = 1 ] || gsettings reset org.gnome.desktop.interface "$path" 2>/dev/null || true ;;
@@ -149,12 +149,22 @@ user_setup() {
     "${layouts:-us}" > "$HOME/.config/sway/keyboard.conf"
   record file "$HOME/.config/sway/keyboard.conf"
 
-  # no wallpapers ship with the repo: start on the live pipes wallpaper and
-  # a preset palette; images dropped in ~/Pictures/Wallpapers show up in /wallpaper
+  # no wallpapers ship with the repo: start on a plain background and a preset
+  # palette; images dropped in ~/Pictures/Wallpapers show up in /wallpaper
   mkdir -p "$HOME/Pictures/Wallpapers" "$REPO/wallpapers" "$STATE"
   if [ ! -e "$REPO/wallpapers/current" ]; then
-    echo pipes > "$STATE/live-wallpaper"
     [ -f "$STATE/theme" ] || echo cobalt > "$STATE/theme"
+  fi
+
+  # drop-in folders for fonts / cursors / icons, linked where apps look
+  # (theme.sh scan-themes; Spotlight's Customize tabs rescan them)
+  for d in Themes Themes/Fonts Themes/Cursors Themes/Icons; do
+    [ -d "$HOME/$d" ] || { mkdir -p "$HOME/$d"; record emptydir "$HOME/$d"; }
+  done
+  mkdir -p "$HOME/.local/share/fonts"
+  if [ ! -e "$HOME/.local/share/fonts/Themes" ]; then
+    ln -s "$HOME/Themes/Fonts" "$HOME/.local/share/fonts/Themes"
+    record link "$HOME/.local/share/fonts/Themes"
   fi
 
   if [ ! -d "$HOME/.local/share/icons/Slot-Multicolor-Dark-Icons" ]; then
@@ -176,7 +186,7 @@ user_setup() {
 system_setup() {
   [ "$NO_SYSTEM" = 1 ] && return 0
   if command -v elephant >/dev/null; then elephant service enable >/dev/null 2>&1 || warn "elephant service enable failed"; fi
-  for k in gtk-theme icon-theme font-name monospace-font-name; do record gsettings "$k"; done
+  for k in gtk-theme icon-theme font-name monospace-font-name cursor-theme cursor-size; do record gsettings "$k"; done
 
   yes_no "Apply the two system tweaks (sidebar terminal colors, shell priority)? Needs sudo" || return 0
   # the sidebar's terminal widget only reads color schemes from its own dir
@@ -228,6 +238,9 @@ EOF
   if [ "$NO_SYSTEM" != 1 ]; then
     say "Generating colors and the Material style"
     "$HOME/.config/sway/scripts/theme.sh" style material >/dev/null 2>&1 || warn "theme.sh reported errors (it retries at login)"
+    "$HOME/.config/sway/scripts/theme.sh" cursor Bibata-Modern-Classic 24 >/dev/null 2>&1
+    record file "$HOME/.config/sway/cursor.conf"
+    record file "$HOME/.config/environment.d/user-cursor.conf"
   fi
   say "Installed. Log out and pick \"SwayFX\" (sway) in your display manager."
 }

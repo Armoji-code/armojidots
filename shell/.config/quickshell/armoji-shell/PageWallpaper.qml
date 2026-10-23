@@ -1,4 +1,4 @@
-// Spotlight page: wallpaper thumbnails (live "pipes" first); a click sets it.
+// Spotlight page: wallpaper thumbnails; a click sets it.
 import QtQuick
 import Quickshell
 import Quickshell.Io
@@ -9,13 +9,6 @@ GridView {
   required property var host
   readonly property string dir: host.ctx.home + "/Pictures/Wallpapers"
   property string current: ""
-  FileView {
-    id: live
-    path: g.host.ctx.home + "/.local/state/armojidots/live-wallpaper"
-    watchChanges: true; printErrors: false
-    onFileChanged: reload()
-  }
-  readonly property bool pipesOn: live.text().trim() === "pipes"
   Process {
     running: true
     command: ["readlink", "-f", g.host.ctx.home + "/dotfiles/wallpapers/current"]
@@ -23,7 +16,7 @@ GridView {
   }
   implicitWidth: 820
   implicitHeight: Math.min(Math.ceil(count / 4) * cellHeight, 440)
-  model: ["@pipes"].concat(host.ctx.wallpapers.filter(f => /\.(jpe?g|png|webp)$/i.test(f)))
+  model: host.ctx.wallpapers.filter(f => /\.(jpe?g|png|webp)$/i.test(f))
   clip: true
   boundsBehavior: Flickable.StopAtBounds
   cellWidth: width / 4
@@ -31,20 +24,17 @@ GridView {
   delegate: Item {
     id: cell
     required property string modelData
-    readonly property bool isPipes: modelData === "@pipes"
-    readonly property string path: isPipes ? "pipes" : g.dir + "/" + modelData
-    readonly property bool active: isPipes ? g.pipesOn : !g.pipesOn && path === g.current
+    readonly property string path: g.dir + "/" + modelData
+    readonly property bool active: path === g.current
     width: g.cellWidth; height: g.cellHeight
     ClippingRectangle {
       id: frame
       anchors { fill: parent; margins: 5; bottomMargin: 26 }
       radius: Theme.cardRadius
       color: Theme.chipBg
-      Pipes { visible: cell.isPipes; anchors.fill: parent; cell: 8; count: 3 }
       Image {
-        visible: !cell.isPipes
         anchors.fill: parent
-        source: cell.isPipes ? "" : "file://" + cell.path
+        source: "file://" + cell.path
         sourceSize: Qt.size(320, 200)
         fillMode: Image.PreserveAspectCrop
         asynchronous: true
@@ -61,7 +51,7 @@ GridView {
     UiLabel {
       anchors { top: frame.bottom; topMargin: 4; horizontalCenter: parent.horizontalCenter }
       width: parent.width - 10; horizontalAlignment: Text.AlignHCenter
-      dim: !cell.active; text: cell.isPipes ? "pipes (live)" : cell.modelData.replace(/\.[^.]+$/, "")
+      dim: !cell.active; text: cell.modelData.replace(/\.[^.]+$/, "")
     }
     MouseArea {
       id: hov
