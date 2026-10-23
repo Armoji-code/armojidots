@@ -1,6 +1,6 @@
 // Spotlight's own commands: one per settings page (/wifi /bluetooth /monitors
-// /style /tone /colors /wallpaper /power /keys /update, /settings = the hub)
-// plus /web, ported from the Python armoji-spotlight. Each returns a list of items:
+// /style /tone /colors /wallpaper /audio /power /keys /update, /settings = the hub),
+// ported from the Python armoji-spotlight. Each returns a list of items:
 //   { text, subtext, icon, kind: launch|cmd|fill|calc|noop|page, value, iconPx }
 // kind page: value names a page shown inside Spotlight's box (Page*.qml, or
 // term:<shell command> for SpotTerm)
@@ -103,13 +103,6 @@ function tones(ctx, filter) {
                    "cmd", p.theme + " tone " + t))
 }
 
-function web(arg) {
-  const q = arg.trim()
-  if (!q) return [item("Type a query to search the web…", "", "web-browser", "noop")]
-  const url = "https://www.google.com/search?q=" + encodeURIComponent(q)
-  return [item("Search the web for “" + q + "”", "google · default browser", "web-browser", "cmd", 'xdg-open "' + url + '"')]
-}
-
 // keybind cheat-sheet — mirrors the sway config
 const KEYBINDS = [
   ["Win + T", "Open terminal (kitty)"],
@@ -139,9 +132,8 @@ function keys(arg) {
                      : [item("No matching shortcut", "", "dialog-question", "noop")]
 }
 
-// command → its page ("" = /web, which is a list). Order matters for
-// prefixes: /w → /wifi, /we → /web, /wa → /wallpaper.
-const COMMANDS = [["/settings", "hub"], ["/wifi", "wifi"], ["/web", ""], ["/wallpaper", "wallpaper"],
+// command → its page. Order matters for prefixes: /w → /wifi, /wa → /wallpaper.
+const COMMANDS = [["/settings", "hub"], ["/wifi", "wifi"], ["/wallpaper", "wallpaper"], ["/audio", "audio"], ["/sound", "audio"],
   ["/bluetooth", "bluetooth"], ["/monitors", "monitors"], ["/displays", "monitors"], ["/style", "style"],
   ["/tone", "style"], ["/colors", "colors"], ["/customize", "customize"], ["/cursor", "cursor"],
   ["/fonts", "fonts"], ["/icons", "icons"], ["/idle", "idle"], ["/layout", "layout"],
@@ -167,7 +159,7 @@ function pageFor(text) {
 // /power reboot), not just the page's own command
 function quickArg(text) { return split(text)[1] !== "" }
 
-// a "/" query's quick items (what Enter runs; the list itself only for /web)
+// a "/" query's quick items (what Enter runs)
 function run(ctx, text) {
   const [head, arg] = split(text)
   switch (command(head)?.[0]) {
@@ -177,7 +169,6 @@ function run(ctx, text) {
     case "/tone": return tones(ctx, arg)
     case "/colors": return colors(ctx, arg)
     case "/wallpaper": return wallpapers(ctx, arg)
-    case "/web": return web(arg)
     case "/keys": return keys(arg)
   }
   return []

@@ -7,7 +7,7 @@ Rectangle {
   signal toggled(bool on)
   implicitWidth: 40
   implicitHeight: 22
-  radius: Theme.ctl(height)
+  radius: Theme.n("togglePill", Theme.ctlPill) ? height / 2 : Theme.ctl(height)
   opacity: enabled ? 1 : 0.4
   color: checked ? Qt.alpha(Theme.accent, 0.55) : Theme.chipHover
   Behavior on color { ColorAnimation { duration: 140 } }

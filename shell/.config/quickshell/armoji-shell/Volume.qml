@@ -9,5 +9,5 @@ Chip {
   PwObjectTracker { objects: [sink] }
   text: sink?.audio?.muted ? "󰝟 mute"
       : ["󰕿", "󰖀", "󰕾"][Math.min(2, Math.floor(v * 3))] + " " + Math.round(v * 100) + "%"
-  onClicked: Quickshell.execDetached(["foot", "--app-id=float-tui", "-e", "pulsemixer"])
+  onClicked: Quickshell.execDetached(["qs", "-c", "armoji-shell", "ipc", "call", "spotlight", "page", "audio"])
 }

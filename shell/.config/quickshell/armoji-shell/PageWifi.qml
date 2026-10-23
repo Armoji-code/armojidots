@@ -63,7 +63,7 @@ Item {
         width: ListView.view.width
         ic: 24
         on: pg.sel === modelData
-        icon: pg.host.iconSrc(pg.icon(modelData))
+        icon: pg.icon(modelData)
         title: modelData.name
         sub: (pg.secured(modelData) ? "󰌾 " : "") + pg.pct(modelData) + "%"
         badge: pg.status(modelData)
@@ -82,19 +82,15 @@ Item {
       visible: pg.sel !== null
       anchors { fill: parent; margins: 16 }
       spacing: 10
-      Image {
-        width: 48; height: 48
-        sourceSize: Qt.size(96, 96)
-        source: pg.sel ? pg.host.iconSrc(pg.icon(pg.sel)) : ""
-      }
+      UiIcon { name: pg.sel ? pg.icon(pg.sel) : ""; size: 48 }
       UiLabel { width: parent.width; text: pg.sel?.name ?? ""; font.pixelSize: 18 }
       Grid {
         columns: 2; columnSpacing: 14; rowSpacing: 6
-        UiLabel { dim: true; text: "Signal" }
+        UiLabel { head: true; text: "Signal" }
         UiLabel { text: pg.sel ? pg.pct(pg.sel) + "%" : "" }
-        UiLabel { dim: true; text: "Security" }
+        UiLabel { head: true; text: "Security" }
         UiLabel { text: pg.sel ? (pg.secured(pg.sel) ? WifiSecurityType.toString(pg.sel.security) : "Open") : "" }
-        UiLabel { dim: true; text: "Status" }
+        UiLabel { head: true; text: "Status" }
         UiLabel { text: pg.sel ? (pg.status(pg.sel) || "Not connected") : "" }
       }
       // password for a new secured network

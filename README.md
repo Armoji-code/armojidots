@@ -125,7 +125,7 @@ the header shows what Enter will do.
 | `/power` | Lock, suspend, logout, reboot, shutdown |
 | `/update` | System / AUR / Flatpak / dotfiles updates in a terminal inside the box, or in the background with a notification when done |
 | `/keys` | Keybind cheat sheet |
-| `/web <query>` | Web search |
+| `/audio` | Output / input device, volume per app (up to 150%) |
 | `23*7` | Inline math; Enter copies the result |
 
 ## Customization

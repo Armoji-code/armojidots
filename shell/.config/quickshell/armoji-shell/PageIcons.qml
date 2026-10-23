@@ -44,7 +44,7 @@ Item {
     spacing: 14
     Row {
       spacing: 16
-      UiLabel { anchors.verticalCenter: parent.verticalCenter; dim: true; text: "Icon theme" }
+      UiLabel { anchors.verticalCenter: parent.verticalCenter; head: true; text: "Icon theme" }
       UiDropdown {
         width: 300
         options: pg.themes
@@ -64,7 +64,7 @@ Item {
       visible: pg.active === pg.slot
       width: parent.width
       spacing: 10
-      UiLabel { dim: true; text: "Folder color" }
+      UiLabel { head: true; text: "Folder color" }
       UiSegment {
         options: ["Auto (accent)", "Custom"]
         current: pg.folder ? 1 : 0

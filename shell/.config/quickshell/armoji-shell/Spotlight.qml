@@ -4,7 +4,7 @@
 // commands (Commands.js): each is a mouse page (Page*.qml) the box fits to —
 // "/" or the cog = the settings hub, /wifi /colors /power … (prefixes work:
 // /po) — and an argument after it is a quick keyboard action for Enter
-// (/colors ruby). Only /web is a list.
+// (/colors ruby).
 // Toggle: `qs -c armoji-shell ipc call spotlight toggle`.
 //
 // One full-screen transparent overlay that only exists while open: both pills
@@ -43,7 +43,7 @@ Scope {
   readonly property var titles: ({ hub: "Settings", wifi: "Wi-Fi", bluetooth: "Bluetooth", monitors: "Monitors",
     customize: "Customize", style: "Customize", colors: "Customize", wallpaper: "Customize", fonts: "Customize",
     cursor: "Customize", icons: "Customize", idle: "Idle", layout: "Layout", power: "Power", keys: "Shortcuts",
-    updates: "Updates" })
+    updates: "Updates", audio: "Audio" })
   readonly property string pageTitle: isTerm ? termTitle : titles[page] ?? ""
   // Enter on a page runs the typed argument (/colors ruby) — the first
   // quick-list item, which stays computed but hidden
@@ -84,8 +84,6 @@ Scope {
     run("")
     open = true; shown = true
   }
-  // put text in the search pill as if typed (hub's Web tile → "/web ")
-  function typeQuery(q) { query = q; page = Cmd.pageFor(q); run(q) }
   function refreshCtx() { ctxProc.running = true }   // after a style change
   function close() { if (busy) return; shown = false; closeT.restart() }
   Timer { id: closeT; interval: 130; onTriggered: sp.open = false }
@@ -152,12 +150,6 @@ Scope {
   }
   function move(step) { if (items.length) sel = Math.max(0, Math.min(items.length - 1, sel + step)) }
 
-  function iconSrc(icon) {
-    // iconPath(name, true) is "" when the theme lacks it (the string-fallback
-    // form still renders Qt's magenta "missing" pattern)
-    return icon.startsWith("/") ? "file://" + icon
-      : Quickshell.iconPath(icon, true) || Quickshell.iconPath("application-x-executable", true)
-  }
 
   LazyLoader {
     active: sp.open
@@ -305,12 +297,10 @@ Scope {
                 Column {
                   anchors.centerIn: parent
                   spacing: 6
-                  Image {
+                  UiIcon {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    width: 44; height: 44
-                    sourceSize: Qt.size(88, 88)
-                    source: sp.iconSrc(cell.modelData.icon)
-                    asynchronous: true
+                    name: cell.modelData.icon
+                    size: 44
                   }
                   Text {
                     anchors.horizontalCenter: parent.horizontalCenter
@@ -349,7 +339,7 @@ Scope {
                 Text { anchors.centerIn: parent; text: "󰅁"; color: Theme.fg; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 16 }
                 MouseArea { id: backMa; anchors.fill: parent; hoverEnabled: true; onClicked: sp.back() }
               }
-              UiLabel { anchors.verticalCenter: parent.verticalCenter; text: sp.pageTitle; font.pixelSize: 16 }
+              UiLabel { anchors.verticalCenter: parent.verticalCenter; text: sp.pageTitle; font.family: Theme.n("spPageTitleFont", Theme.font); font.pixelSize: Theme.n("spPageTitleSize", 16) }
             }
             UiLabel {
               anchors { right: parent.right; rightMargin: 4; verticalCenter: header.verticalCenter }
@@ -364,7 +354,7 @@ Scope {
               // the look tabs share one Customize page (it picks the tab from sp.page)
               sourceComponent: ({ hub: hubC, wifi: wifiC, bluetooth: btC, monitors: monC, customize: custC,
                                   style: custC, colors: custC, wallpaper: custC, fonts: custC, cursor: custC,
-                                  icons: custC, idle: idleC, layout: layoutC, power: powerC, keys: keysC,
+                                  icons: custC, idle: idleC, audio: audioC, layout: layoutC, power: powerC, keys: keysC,
                                   updates: updC })[sp.page] ?? (sp.isTerm ? termC : null)
               onLoaded: sp.pageObj = item
               // back to results: the search pill takes the keys again
@@ -377,6 +367,7 @@ Scope {
           Component { id: monC; PageMonitors { host: sp } }
           Component { id: custC; PageCustomize { host: sp } }
           Component { id: idleC; PageIdle { host: sp } }
+          Component { id: audioC; PageAudio { host: sp } }
           Component { id: layoutC; PageLayout { host: sp } }
           Component { id: powerC; PagePower { host: sp } }
           Component { id: keysC; PageKeys { host: sp } }
@@ -399,7 +390,7 @@ Scope {
               width: ListView.view.width
               cursor: sp.sel === index
               ic: modelData.iconPx || 30
-              icon: sp.iconSrc(modelData.icon)
+              icon: modelData.icon
               title: modelData.text
               sub: modelData.subtext
               onClicked: sp.activate(index)

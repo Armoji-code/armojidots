@@ -27,7 +27,7 @@ Item {
     id: col
     width: parent.width
     spacing: 14
-    UiLabel { dim: true; text: "Cursor theme" }
+    UiLabel { head: true; text: "Cursor theme" }
     Flow {
       width: parent.width
       spacing: 10
@@ -46,7 +46,7 @@ Item {
     }
     Row {
       spacing: 12
-      UiLabel { anchors.verticalCenter: parent.verticalCenter; dim: true; text: "Size" }
+      UiLabel { anchors.verticalCenter: parent.verticalCenter; head: true; text: "Size" }
       UiSegment {
         options: pg.sizes.map(String)
         current: Math.max(0, pg.sizes.indexOf(pg.size))

@@ -74,7 +74,7 @@ Item {
             width: col.width
             spacing: 2
             visible: list.length > 0
-            UiLabel { height: 26; verticalAlignment: Text.AlignVCenter; leftPadding: 4; dim: true; text: sec.modelData[0] }
+            UiLabel { height: 26; verticalAlignment: Text.AlignVCenter; leftPadding: 4; head: true; text: sec.modelData[0] }
             Repeater {
               model: sec.list
               SpotRow {
@@ -82,7 +82,7 @@ Item {
                 width: sec.width
                 ic: 24
                 on: pg.sel === modelData
-                icon: pg.host.iconSrc(modelData.icon || "bluetooth")
+                icon: modelData.icon || "bluetooth"
                 title: modelData.name
                 sub: pg.kind(modelData) + (modelData.batteryAvailable ? " · " + Math.round(modelData.battery * 100) + "%" : "")
                 badge: pg.status(modelData)
@@ -105,21 +105,17 @@ Item {
       visible: pg.sel !== null
       anchors { fill: parent; margins: 16 }
       spacing: 10
-      Image {
-        width: 48; height: 48
-        sourceSize: Qt.size(96, 96)
-        source: pg.sel ? pg.host.iconSrc(pg.sel.icon || "bluetooth") : ""
-      }
+      UiIcon { name: pg.sel?.icon ?? ""; fallback: "bluetooth"; size: 48 }
       UiLabel { width: parent.width; text: pg.sel?.name ?? ""; font.pixelSize: 18 }
       Grid {
         columns: 2; columnSpacing: 14; rowSpacing: 6
-        UiLabel { dim: true; text: "Type" }
+        UiLabel { head: true; text: "Type" }
         UiLabel { text: pg.sel ? pg.kind(pg.sel) : "" }
-        UiLabel { dim: true; text: "Address" }
+        UiLabel { head: true; text: "Address" }
         UiLabel { text: pg.sel?.address ?? "" }
-        UiLabel { dim: true; text: "Battery"; visible: pg.sel?.batteryAvailable ?? false }
+        UiLabel { head: true; text: "Battery"; visible: pg.sel?.batteryAvailable ?? false }
         UiLabel { text: pg.sel ? Math.round(pg.sel.battery * 100) + "%" : ""; visible: pg.sel?.batteryAvailable ?? false }
-        UiLabel { dim: true; text: "Status" }
+        UiLabel { head: true; text: "Status" }
         UiLabel { text: pg.sel ? (pg.status(pg.sel) || "Not paired") : "" }
       }
       Row {

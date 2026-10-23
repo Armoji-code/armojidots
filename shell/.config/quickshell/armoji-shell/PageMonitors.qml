@@ -228,7 +228,7 @@ Item {
         .map(m => m.refresh).filter((v, i, a) => a.indexOf(v) === i).sort((a, b) => b - a)
       readonly property var scaleOpts: [1, 1.25, 1.5, 1.75, 2]
       readonly property var rots: ["normal", "90", "180", "270"]
-      UiLabel { dim: true; text: "Resolution" }
+      UiLabel { head: true; text: "Resolution" }
       UiDropdown {
         width: parent.width; enabled: sc.can
         options: sc.sizes
@@ -239,7 +239,7 @@ Item {
           o.r = Math.max(...o.modes.filter(m => m.width === w && m.height === h).map(m => m.refresh))
         })
       }
-      UiLabel { dim: true; text: "Refresh rate" }
+      UiLabel { head: true; text: "Refresh rate" }
       UiDropdown {
         width: parent.width; enabled: sc.can
         options: sc.rates.map(r => (r / 1000).toFixed(2) + " Hz")
@@ -250,7 +250,7 @@ Item {
         spacing: 10
         Column {
           spacing: 6
-          UiLabel { dim: true; text: "Scale" }
+          UiLabel { head: true; text: "Scale" }
           UiDropdown {
             width: 124; enabled: sc.can
             readonly property var opts: sc.scaleOpts
@@ -261,7 +261,7 @@ Item {
         }
         Column {
           spacing: 6
-          UiLabel { dim: true; text: "Rotation" }
+          UiLabel { head: true; text: "Rotation" }
           UiDropdown {
             width: 124; enabled: sc.can
             readonly property var opts: sc.rots

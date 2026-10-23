@@ -9,7 +9,7 @@ Rectangle {
   signal clicked()
   implicitWidth: label.implicitWidth + 28
   implicitHeight: 32
-  radius: Theme.ctl(height)
+  radius: Theme.n("btnPill", Theme.ctlPill) ? height / 2 : Theme.ctl(height)
   opacity: enabled ? 1 : 0.4
   readonly property color tint: danger ? "#e06c75" : Theme.accent
   color: accent || danger ? Qt.alpha(tint, ma.containsMouse ? 0.42 : 0.3)

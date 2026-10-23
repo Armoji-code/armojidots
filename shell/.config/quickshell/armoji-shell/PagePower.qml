@@ -35,12 +35,7 @@ Item {
         Column {
           anchors.centerIn: parent
           spacing: 10
-          Image {
-            anchors.horizontalCenter: parent.horizontalCenter
-            width: 56; height: 56
-            sourceSize: Qt.size(112, 112)
-            source: pw.host.iconSrc(b.modelData[1])
-          }
+          UiIcon { anchors.horizontalCenter: parent.horizontalCenter; name: b.modelData[1]; size: 56 }
           UiLabel { anchors.horizontalCenter: parent.horizontalCenter; text: b.isArmed ? "Click again" : b.modelData[0]; font.pixelSize: 15 }
         }
         MouseArea {

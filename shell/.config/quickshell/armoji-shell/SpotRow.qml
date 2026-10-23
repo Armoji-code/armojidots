@@ -5,7 +5,7 @@ import QtQuick
 
 Rectangle {
   id: row
-  property string icon                // resolved image source
+  property string icon                // icon name or file path (UiIcon)
   property string title
   property string sub
   property string badge
@@ -20,15 +20,13 @@ Rectangle {
   border.width: 1
   border.color: sel || cursor ? Theme.selBorder : "transparent"
   Behavior on color { ColorAnimation { duration: 140 } }
-  Image {
+  UiIcon {
     id: rowIcon
     x: 12
     anchors.verticalCenter: parent.verticalCenter
-    width: row.ic; height: row.ic
-    sourceSize: Qt.size(row.ic * 2, row.ic * 2)
-    fillMode: Image.PreserveAspectCrop
-    source: row.icon
-    asynchronous: true
+    name: row.icon
+    size: row.ic
+    color: row.sel ? Theme.selFg : Theme.fg
   }
   Column {
     anchors { left: rowIcon.right; leftMargin: 12; right: badgeText.left; rightMargin: 10; verticalCenter: parent.verticalCenter }

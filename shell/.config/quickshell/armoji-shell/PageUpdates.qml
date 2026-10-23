@@ -79,7 +79,7 @@ Item {
       SpotRow {
         required property var modelData
         width: up.width
-        icon: up.host.iconSrc(modelData.icon)
+        icon: modelData.icon
         title: modelData.text
         on: up.pending?.bg === modelData.bg && modelData.bg !== ""
         enabled: !Updater.running

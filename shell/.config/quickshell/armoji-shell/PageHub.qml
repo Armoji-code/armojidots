@@ -4,6 +4,7 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Networking
 import Quickshell.Bluetooth
+import Quickshell.Services.Pipewire
 
 Item {
   id: hub
@@ -13,6 +14,8 @@ Item {
   readonly property var net: Networking.devices.values.find(d => d.type === DeviceType.Wifi)
     ?.networks.values.find(n => n.connected) ?? null
   readonly property var ad: Bluetooth.defaultAdapter
+  readonly property var sink: Pipewire.defaultAudioSink
+  PwObjectTracker { objects: [hub.sink] }
   readonly property int btN: ad ? ad.devices.values.filter(d => d.connected).length : 0
   FileView { id: dispMode; path: Quickshell.env("HOME") + "/.local/state/armojidots/display-mode"; printErrors: false }
   FileView { id: palette; path: Quickshell.env("HOME") + "/.local/state/armojidots/theme" }
@@ -27,7 +30,7 @@ Item {
     ["power", "system-shutdown", "Lock, suspend, reboot…"],
     ["keys", "input-keyboard", "Cheat sheet"],
     ["updates", "system-software-update", "System, AUR, dotfiles"],
-    ["web", "web-browser", "Search Google"],
+    ["audio", "audio-volume-high", !sink ? "No output" : sink.audio?.muted ? "Muted" : Math.round((sink.audio?.volume ?? 0) * 100) + "% · " + (sink.description || sink.name)],
   ]
 
   Grid {
@@ -46,16 +49,16 @@ Item {
           anchors.centerIn: parent
           width: parent.width - 20
           spacing: 6
-          Image {
+          UiIcon {
             anchors.horizontalCenter: parent.horizontalCenter
-            width: 40; height: 40
-            sourceSize: Qt.size(80, 80)
-            source: hub.host.iconSrc(tile.modelData[1])
+            name: tile.modelData[1]
+            size: 40
+            color: tileMa.containsMouse ? Theme.accent : Theme.fg
           }
-          UiLabel { width: parent.width; horizontalAlignment: Text.AlignHCenter; text: hub.host.titles[tile.modelData[0]] ?? "Web search"; font.pixelSize: 14 }
+          UiLabel { width: parent.width; horizontalAlignment: Text.AlignHCenter; text: hub.host.titles[tile.modelData[0]]; font.pixelSize: 14 }
           UiLabel { width: parent.width; horizontalAlignment: Text.AlignHCenter; dim: true; text: tile.modelData[2] }
         }
-        MouseArea { id: tileMa; anchors.fill: parent; hoverEnabled: true; onClicked: tile.modelData[0] === "web" ? hub.host.typeQuery("/web ") : hub.host.openPage(tile.modelData[0]) }
+        MouseArea { id: tileMa; anchors.fill: parent; hoverEnabled: true; onClicked: hub.host.openPage(tile.modelData[0]) }
       }
     }
   }

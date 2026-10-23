@@ -35,7 +35,7 @@ Item {
     id: top
     width: parent.width
     spacing: 10
-    UiLabel { dim: true; text: "Palette" }
+    UiLabel { head: true; text: "Palette" }
     Flow {
       width: parent.width
       spacing: 10
@@ -63,18 +63,13 @@ Item {
     // surface opacity: sets bar/popup/terminal/app alphas (applied on release)
     Row {
       spacing: 10
-      UiLabel { anchors.verticalCenter: parent.verticalCenter; dim: true; text: "Opacity  " + (pg.opSet ? Math.round(pg.op * 100) + "%" : "pack default") }
+      UiLabel { anchors.verticalCenter: parent.verticalCenter; head: true; text: "Opacity  " + (pg.opSet ? Math.round(pg.op * 100) + "%" : "pack default") }
       UiButton { visible: pg.opSet; text: "Default"; onClicked: pg.setOp("default") }
     }
-    Rectangle {
+    UiTrack {
       id: track
-      width: parent.width; height: 22; radius: Theme.ctl(22)
-      color: Theme.chipHover
-      Rectangle {
-        width: track.height + (track.width - track.height) * (pg.op - 0.3) / 0.7
-        height: parent.height; radius: parent.radius
-        color: Theme.accent
-      }
+      width: parent.width; height: 22
+      frac: (pg.op - 0.3) / 0.7
       MouseArea {
         anchors.fill: parent
         function set(m) { pg.op = Math.round(Math.max(0.3, Math.min(1, 0.3 + 0.7 * (m.x - track.height / 2) / (width - track.height))) * 20) / 20 }
@@ -139,7 +134,7 @@ Item {
     }
     Column {
       spacing: 12
-      UiLabel { dim: true; text: "Custom accent" }
+      UiLabel { head: true; text: "Custom accent" }
       Rectangle { width: 120; height: 60; radius: Theme.ctlRadius; color: pg.picked }
       Rectangle {
         width: 120; height: 32; radius: Math.min(Theme.ctlRadius, height / 2)

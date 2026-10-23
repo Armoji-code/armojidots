@@ -24,7 +24,7 @@ Item {
     id: col
     width: parent.width
     spacing: 18
-    UiLabel { dim: true; text: "Style pack" }
+    UiLabel { head: true; text: "Style pack" }
     Flow {
       width: parent.width
       spacing: 12
@@ -52,7 +52,7 @@ Item {
     Column {
       visible: pg.cur.neutral !== "1"     // monochrome packs ignore tone
       spacing: 8
-      UiLabel { dim: true; text: "Tone — how strongly the palette tints everything" }
+      UiLabel { head: true; text: "Tone — how strongly the palette tints everything" }
       UiSegment {
         options: ["Light", "Heavy", "Loud"]
         current: Math.max(0, pg.tones.indexOf(tone.text().trim() || "heavy"))
