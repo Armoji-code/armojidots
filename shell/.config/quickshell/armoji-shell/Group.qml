@@ -53,8 +53,9 @@ Rectangle {
   Grid {
     id: grid
     anchors.centerIn: parent
-    // exact count: spare columns (the Repeater counts as an item) add a trailing gap
-    columns: g.vert ? 1 : Math.max(1, rep.count)
+    // exact count of shown widgets: a spare column (a hidden widget, or the
+    // Repeater itself) adds a trailing gap
+    columns: g.vert ? 1 : Math.max(1, children.filter(c => c.wid !== undefined && c.visible).length)
     spacing: Theme.spacing
     horizontalItemAlignment: Grid.AlignHCenter
     verticalItemAlignment: Grid.AlignVCenter

@@ -7,7 +7,8 @@ Chip {
   readonly property real p: dev.percentage <= 1 ? dev.percentage * 100 : dev.percentage
   readonly property bool charging: dev.state === UPowerDeviceState.Charging
     || dev.state === UPowerDeviceState.FullyCharged
-  visible: dev.isLaptopBattery
+  readonly property bool shown: dev.isLaptopBattery   // BarWidget collapses the slot
+  visible: shown
   function hm(s) { const h = Math.floor(s / 3600), mm = Math.round(s % 3600 / 60); return (h ? h + "h " : "") + mm + "m" }
   tip: charging ? (dev.timeToFull > 0 ? hm(dev.timeToFull) + " to full" : "charging")
        : dev.timeToEmpty > 0 ? hm(dev.timeToEmpty) + " left" : ""
